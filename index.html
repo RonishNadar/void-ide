@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Void IDE</title>
+<style>
+  body{font-family:monospace;background:#080a0d;color:#c8d8e8;max-width:700px;margin:60px auto;padding:0 20px}
+  h1{color:#4ec9c9}pre{background:#13161a;padding:16px;border-radius:6px;overflow-x:auto;border:1px solid #1e2530}
+  a{color:#4ec9c9}
+</style>
+</head>
+<body>
+<h1>Void IDE</h1>
+<p>A beautiful Arduino IDE powered by Arduino CLI.</p>
+<h2>Install via APT</h2>
+<pre>curl -fsSL https://ronishnadar.github.io/void-ide/void-ide.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/void-ide.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/void-ide.gpg] https://ronishnadar.github.io/void-ide/apt stable main" | sudo tee /etc/apt/sources.list.d/void-ide.list
+
+sudo apt update && sudo apt install void-ide</pre>
+<p><a href="https://github.com/RonishNadar/void-ide">GitHub →</a></p>
+</body></html>

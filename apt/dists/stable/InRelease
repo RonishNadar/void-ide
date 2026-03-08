@@ -1,0 +1,43 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Origin: Void IDE
+Label: Void IDE
+Suite: stable
+Codename: stable
+Architectures: amd64
+Components: main
+Description: Void IDE APT Repository
+Date: Sun, 08 Mar 2026 10:21:24 +0000
+MD5Sum:
+ c08b55c52d9747185ca9cbcc31461d12              177 Release
+ e053b067dff15866900afdb6adfbb2af              603 main/binary-amd64/Packages
+ f99c3a95b1146c9312da6f366c358977              444 main/binary-amd64/Packages.gz
+SHA1:
+ f8203eb7c0888cdd007e9e2e1b82e6cca6a3d20e              177 Release
+ 3ee36a0e3d5be80081d2cf1e829c7c3c6f7eeec0              603 main/binary-amd64/Packages
+ 01692467fca8410f941cb756c11de1dd4510c4a9              444 main/binary-amd64/Packages.gz
+SHA256:
+ c819728a39a174a0f49ecf25a1380ceaeee5847df01fbff66dac83ddb2fad621              177 Release
+ 5fffd590154d7fc982b442be64fcb9a4d243b892e7d04ab1926f99f38f3c300f              603 main/binary-amd64/Packages
+ 907f5a41c13282afb4e89c1ec738efe4ef6e1086319e5870c97ab24120e0e216              444 main/binary-amd64/Packages.gz
+SHA512:
+ 1ae2af536530e182d68574cf104246ac1b5e7cc27aef0fc89479b669e11a227744d1a481d076ab2ed4fd46c55a0088cfdd30cf44630f8e7a3c94e9c74e075c03              177 Release
+ 4b90e3e92b730b5375fa38146cf48bf36daa66c07d4e0e376bb59284f992aec9076ff32868746367f5ef35a94c6b45a68e33e2e5e2514773e3d477ecb95775cd              603 main/binary-amd64/Packages
+ 3da967d3f39ff662c90d6cd2442d9129d0a7e8c4d0a5a026941a8c310a0a5e8708e1f51c9685389a8ceb44d35d10c8d83e75b86ddef4c8b37755bfdb372f1a6e              444 main/binary-amd64/Packages.gz
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCgAdFiEEEra5ko7TbZ6UzdpkCifZbIV17PMFAmmtTaQACgkQCifZbIV1
+7PMC2A/+J7vftq7SRsNdNYloLXNVlTtmqg+1Z4qm9j2EQ2zOnqutngwX13aMwZ+5
+DR6MTG2MhDDR4xkGncmD6NLLYpgwNHDRebXN0dzDHvWozOu3E/FEeiuHU7vdrn/S
+KPr1GTCf5SVQ8ncc20nL3Y1Mfe8HGdldbD7/JYojHrh+LvmWdI+okNt0LaDj4I1m
+uMhIIau1dGkEOql5nAYTXf0Hd3JahkYHJKhJB4U6GdkIw0PBNT2xSWMUnlcNDdEO
+WrYUq8iYGDM1hgY1rtXv85P73Q5+ah5oTmOEaSndmqfr+uj51bsdr/5TOg+QobxS
+HBX65Q/KLahwpGNZll1NXcYFfiYJe79rLhVbBB3YxDuswa1AEIF0Nf1NtA6E2ByD
+z+cTjBnflNPhbro8KkrCJXk8iHXz/uQcWJP1iRFRpQEhbbCH+ssNmKG2fIFxvPuW
+Ed7Ir4aRvPFBWH7A7/ML4NqZJ7Nx9t6SXcMXDdap3FOLDF0pSzYpHUfAjY+u3nFY
+NPqMOczp5pwiYVSZRE+6aoH3YgvSMqczAfQO75l9RY3IsJ3MDAL7Mb2loD64VHDK
+TkCPgtDJcym/t02nB7G3CcaZU4czAYPYdFq186ZbxKAfKEhkWdK8h/bHuGPcoJ82
+wGdQG+LbMZVDaxs/5r88JQaCYJjBUh2z/1vjtqG+sxYbqSKB9CE=
+=UNjY
+-----END PGP SIGNATURE-----

@@ -1,0 +1,20 @@
+Package: void-ide
+Version: 1.0.0
+Architecture: amd64
+Maintainer: Ronish Nadar
+Installed-Size: 399449
+Depends: libgtk-3-0, libnotify4, libnss3, libxss1, libxtst6, xdg-utils, libatspi2.0-0, libuuid1
+Recommends: libappindicator3-1
+Filename: pool/main/void-ide_1.0.0_amd64.deb
+Size: 86839102
+MD5sum: b874e8ffa54ad645bfa1953938646c11
+SHA1: 37859bc0eee95167a823dad8a5d84e2089526ce5
+SHA256: 000a782e807374b840c4ede868d1cf65852dee83ee629b1a243edf15634fe3d5
+Section: default
+Priority: optional
+Homepage: https://./
+Description:
+  A beautiful Arduino IDE powered by Arduino CLI
+License: MIT
+Vendor: Ronish Nadar
+
