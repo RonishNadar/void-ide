@@ -211,10 +211,6 @@ All CLI output is streamed line-by-line back to the output console in real time.
 | Arduino Leonardo | `arduino:avr:leonardo` |
 | Arduino Micro | `arduino:avr:micro` |
 | Arduino Pro Mini | `arduino:avr:pro` |
-| ESP32 Dev Module | `esp32:esp32:esp32` |
-| ESP32-S3 | `esp32:esp32:esp32s3` |
-| ESP8266 NodeMCU | `esp8266:esp8266:nodemcuv2` |
-| Raspberry Pi Pico | `rp2040:rp2040:rpipico` |
 
 Any board supported by arduino-cli can be added via the **Board Manager** tab.
 
