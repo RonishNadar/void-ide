@@ -182,6 +182,8 @@ jobs:
           cd gh-pages
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git add -A
           git commit -m "apt: publish void-ide v${{ steps.version.outputs.VERSION }}" || echo "nothing to commit"
+          git branch -M gh-pages
           git push origin gh-pages --force
