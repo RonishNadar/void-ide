@@ -1,0 +1,194 @@
+name: Release & Publish APT
+
+on:
+  push:
+    tags:
+      - 'v*'          # triggers on v1.0.0, v1.1.0, etc.
+
+permissions:
+  contents: write   # create GitHub Releases
+  pages:    write   # publish to GitHub Pages
+  id-token: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-22.04
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # ── 2. Node.js ───────────────────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      # ── 3. Dependencies for Electron build ───────────────────────────────────
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libnotify-dev \
+            libnss3 \
+            libxss1 \
+            libxtst6 \
+            xdg-utils \
+            libatspi2.0-dev \
+            dpkg \
+            dpkg-dev \
+            gnupg2
+
+      # ── 4. Install npm packages ───────────────────────────────────────────────
+      - name: Install npm dependencies
+        run: npm ci
+
+      # ── 5. Generate icon ─────────────────────────────────────────────────────
+      - name: Generate icons
+        run: python3 scripts/generate_icon.py
+
+      # ── 6. Build .deb ────────────────────────────────────────────────────────
+      - name: Build .deb package
+        run: npm run dist:deb
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 7. Get version from tag ───────────────────────────────────────────────
+      - name: Get version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      # ── 8. Create GitHub Release and upload .deb ──────────────────────────────
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Void IDE v${{ steps.version.outputs.VERSION }}"
+          body: |
+            ## Install
+
+            ```bash
+            # Add the Void IDE APT repository
+            curl -fsSL https://ronishnadar.github.io/void-ide/void-ide.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/void-ide.gpg
+            echo "deb [signed-by=/etc/apt/keyrings/void-ide.gpg] https://ronishnadar.github.io/void-ide/apt stable main" | sudo tee /etc/apt/sources.list.d/void-ide.list
+            sudo apt update
+            sudo apt install void-ide
+            ```
+
+            Or download the `.deb` directly from the assets below.
+          files: dist/*.deb
+          draft: false
+          prerelease: false
+
+      # ── 9. Import GPG key for signing ────────────────────────────────────────
+      - name: Import GPG key
+        run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes \
+            --passphrase-fd 0 \
+            --pinentry-mode loopback \
+            --trust-model always \
+            --export-secret-keys > /dev/null
+
+      # ── 10. Checkout gh-pages branch (or create it) ──────────────────────────
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+          fetch-depth: 0
+        continue-on-error: true
+
+      - name: Init gh-pages if missing
+        run: |
+          if [ ! -d "gh-pages" ]; then
+            mkdir gh-pages
+            cd gh-pages
+            git init
+            git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+            git checkout --orphan gh-pages
+          fi
+
+      # ── 11. Build APT repo structure ─────────────────────────────────────────
+      - name: Build APT repository
+        run: |
+          mkdir -p gh-pages/apt/pool/main
+          mkdir -p gh-pages/apt/dists/stable/main/binary-amd64
+
+          # Copy the new .deb into pool
+          cp dist/void-ide_*.deb gh-pages/apt/pool/main/
+
+          # Generate Packages index
+          cd gh-pages/apt
+          dpkg-scanpackages pool/main /dev/null > dists/stable/main/binary-amd64/Packages
+          gzip -k -f dists/stable/main/binary-amd64/Packages
+
+          # Generate Release file
+          cd dists/stable
+          cat > Release << EOF
+          Origin: Void IDE
+          Label: Void IDE
+          Suite: stable
+          Codename: stable
+          Architectures: amd64
+          Components: main
+          Description: Void IDE APT Repository
+          EOF
+
+          apt-ftparchive release . >> Release
+
+          # Sign Release with GPG
+          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes \
+            --passphrase-fd 0 \
+            --pinentry-mode loopback \
+            --default-key "${{ secrets.GPG_KEY_ID }}" \
+            --clearsign -o InRelease Release
+
+          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes \
+            --passphrase-fd 0 \
+            --pinentry-mode loopback \
+            --default-key "${{ secrets.GPG_KEY_ID }}" \
+            -abs -o Release.gpg Release
+
+      # ── 12. Export public GPG key ─────────────────────────────────────────────
+      - name: Export public GPG key
+        run: |
+          gpg --armor --export "${{ secrets.GPG_KEY_ID }}" > gh-pages/void-ide.gpg
+
+      # ── 13. Add install page ──────────────────────────────────────────────────
+      - name: Write index page
+        run: |
+          cat > gh-pages/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head><meta charset="utf-8"><title>Void IDE</title>
+          <style>
+            body{font-family:monospace;background:#080a0d;color:#c8d8e8;max-width:700px;margin:60px auto;padding:0 20px}
+            h1{color:#4ec9c9}pre{background:#13161a;padding:16px;border-radius:6px;overflow-x:auto;border:1px solid #1e2530}
+            a{color:#4ec9c9}
+          </style>
+          </head>
+          <body>
+          <h1>Void IDE</h1>
+          <p>A beautiful Arduino IDE powered by Arduino CLI.</p>
+          <h2>Install via APT</h2>
+          <pre>curl -fsSL https://ronishnadar.github.io/void-ide/void-ide.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/void-ide.gpg
+
+          echo "deb [signed-by=/etc/apt/keyrings/void-ide.gpg] https://ronishnadar.github.io/void-ide/apt stable main" | sudo tee /etc/apt/sources.list.d/void-ide.list
+
+          sudo apt update && sudo apt install void-ide</pre>
+          <p><a href="https://github.com/RonishNadar/void-ide">GitHub →</a></p>
+          </body></html>
+          EOF
+
+      # ── 14. Push gh-pages ────────────────────────────────────────────────────
+      - name: Deploy to GitHub Pages
+        run: |
+          cd gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "apt: publish void-ide v${{ steps.version.outputs.VERSION }}" || echo "nothing to commit"
+          git push origin gh-pages --force
