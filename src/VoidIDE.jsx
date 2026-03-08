@@ -1813,7 +1813,7 @@ export default function VoidIDE() {
 
       {/* Serial Monitor */}
       {showSerial && (
-        <div className="overlay" onClick={e => { if (e.target === e.currentTarget) setShowSerial(false); }}>
+        <div className="overlay" onClick={async e => { if (e.target === e.currentTarget) { if (serialOpen) await handleSerialClose(); setShowSerial(false); } }}>
           <div className="ser-panel">
             <div className="ser-hdr">
               <span className={`ser-dot ${serialOpen ? 'open' : 'closed'}`} />
@@ -1827,7 +1827,7 @@ export default function VoidIDE() {
                 ? <button className="btn cyan"  style={{ padding: '5px 12px', fontSize: 11 }} onClick={handleSerialOpen}>Connect</button>
                 : <button className="btn danger" style={{ padding: '5px 12px', fontSize: 11 }} onClick={handleSerialClose}>Disconnect</button>
               }
-              <button className="ser-x" onClick={() => setShowSerial(false)}>✕</button>
+              <button className="ser-x" onClick={async () => { if (serialOpen) await handleSerialClose(); setShowSerial(false); }}>✕</button>
             </div>
             <div className="ser-body">
               {serialLogs.map((l, i) => (
