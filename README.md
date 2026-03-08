@@ -1,263 +1,200 @@
-# Void IDE — Setup & Build Guide
+<p align="center">
+  <img src="assets/icons/128x128.png" alt="Void IDE" width="96"/>
+</p>
 
-A beautiful Arduino IDE powered by Arduino CLI, built with React + Electron.
+<h1 align="center">Void IDE</h1>
 
----
+<p align="center">
+  A modern, minimal Arduino IDE built with React + Electron + arduino-cli.<br/>
+  Dark theme. Real compilation. Real uploads. Real serial monitor.
+</p>
 
-## Prerequisites
-
-### 1. Node.js & npm
-```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
-node --version   # should be 18+
-```
-
-### 2. Arduino CLI
-```bash
-curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
-sudo mv bin/arduino-cli /usr/local/bin/
-arduino-cli version
-```
-
-### 3. Initialize Arduino CLI (first time only)
-```bash
-arduino-cli config init
-arduino-cli core update-index
-
-# Install AVR core (for Uno, Nano, Mega)
-arduino-cli core install arduino:avr
-
-# Install ESP32 core (optional)
-arduino-cli core install esp32:esp32
-```
-
-### 4. Python + Pillow (for icon generation)
-```bash
-sudo apt install python3-pip
-pip3 install Pillow --break-system-packages
-```
+<p align="center">
+  <img src="https://img.shields.io/badge/platform-Linux-blue?style=flat-square"/>
+  <img src="https://img.shields.io/badge/electron-28-cyan?style=flat-square"/>
+  <img src="https://img.shields.io/badge/arduino--cli-latest-green?style=flat-square"/>
+  <img src="https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square"/>
+</p>
 
 ---
 
-## Project Setup
+## Features
 
-### Clone / set up your project
-```
-void-ide/
-├── electron/
-│   ├── main.js          ← Electron main process + Arduino CLI bridge
-│   └── preload.js       ← Secure IPC bridge to renderer
-├── src/
-│   ├── App.js           ← Import VoidIDE component here
-│   └── index.js         ← React entry point
-├── assets/
-│   ├── icon.png         ← Generated below
-│   └── void-ide.desktop ← Manual .desktop entry (optional)
-├── scripts/
-│   ├── generate_icon.py ← Generates the icon
-│   ├── postinstall.sh   ← Runs after deb install
-│   └── postremove.sh    ← Runs after deb removal
-└── package.json
-```
+- **Zero simulation** — every action calls real `arduino-cli` under the hood
+- **Auto-installs arduino-cli** on first launch if not found
+- **Board Manager** — search and install any core from the arduino-cli index (AVR, ESP32, ESP8266, RP2040, SAMD, STM32, and more)
+- **Library Manager** — search, install, and uninstall libraries from the Arduino library registry
+- **Real Serial Monitor** — connect to any port, send and receive data, configurable baud rate
+- **Auto port detection** — detects connected boards via `arduino-cli board list`
+- **Multi-tab editor** — syntax highlighting, line numbers, Tab indent, Ctrl+S to save
+- **Native file dialogs** — open and save `.ino` sketches via OS file picker
+- **Packages as `.deb`** — installs to Show Applications like a native Linux app
 
-### Install dependencies
+---
+
+## Screenshots
+
+> _Launch screen on first run — installs arduino-cli automatically_
+
+> _Main IDE with Board Manager open_
+
+---
+
+## Requirements
+
+- **Ubuntu / Debian Linux** (tested on Ubuntu 22.04+)
+- **Node.js 18+** and **npm**
+- **Python 3** with **Pillow** (for icon generation)
+- Internet connection on first launch (to download arduino-cli)
+
+---
+
+## Getting Started
+
+### 1. Clone the repo
+
 ```bash
+git clone https://github.com/YOUR_USERNAME/void-ide.git
 cd void-ide
+```
+
+### 2. Install Node dependencies
+
+```bash
 npm install
 ```
 
-### Generate the icon
+### 3. Generate icons
+
 ```bash
+pip3 install Pillow --break-system-packages
 python3 scripts/generate_icon.py
-# Creates assets/icon.png (512×512 cyan { } on dark hex)
 ```
 
-### Set up React entry point
+### 4. Fix Electron sandbox permissions (Linux)
 
-**src/index.js**
-```js
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import VoidIDE from './VoidIDE';   // ← your void-ide.jsx
-
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<VoidIDE />);
+```bash
+sudo chown root:root node_modules/electron/dist/chrome-sandbox
+sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
 ```
 
-**src/App.js** — just re-export VoidIDE, or delete and use index.js directly.
-
-Place `void-ide.jsx` as `src/VoidIDE.jsx`.
-
----
-
-## Development (live reload)
-
-Starts React dev server + Electron simultaneously:
+### 5. Run in development mode
 
 ```bash
 npm run dev
 ```
 
----
+This starts the React dev server and opens the Electron window. On first launch, Void IDE will detect that `arduino-cli` is missing and walk you through installing it automatically.
 
-## Build & Package
-
-### Build the React app + package as .deb and AppImage:
-```bash
-npm run dist:all
-```
-
-Output in `dist/`:
-```
-dist/
-├── void-ide_1.0.0_amd64.deb      ← Install with dpkg
-└── Void-IDE-1.0.0.AppImage        ← Portable, no install needed
-```
+> **Note:** Do not use the browser tab that React opens — always use the Electron window.
 
 ---
 
-## Install as Ubuntu App (Show Applications)
+## Build & Install as a native `.deb`
 
-### Option A — Install the .deb (recommended)
 ```bash
+# Build the .deb package
+npm run dist:deb
+
+# Install it
 sudo dpkg -i dist/void-ide_1.0.0_amd64.deb
 ```
 
-This:
-- Installs Void IDE to `/opt/Void IDE/`
-- Creates `/usr/share/applications/void-ide.desktop` automatically
-- Sets up udev rules for Arduino USB access
-- Adds your user to the `dialout` group
-- Creates `~/VoidSketches/` for your sketches
+After installation, **Void IDE** appears in Show Applications with its icon. The post-install script automatically:
+- Adds your user to the `dialout` group (required for serial port access)
+- Sets up udev rules for Arduino USB devices (CH340, CP210x, ATmega16U2)
+- Creates `~/VoidSketches/` as your default sketch folder
+- Patches the `.desktop` entry with `--no-sandbox` for correct launch on Linux
 
-**Log out and back in** for serial port access to take effect.
+> **Log out and back in** after first install for serial port access to take effect.
 
-Void IDE will appear in **Show Applications** immediately with its icon.
-
----
-
-### Option B — Manual .desktop entry (no build needed, browser-based)
-
-If you just want a shortcut in Show Apps that opens the React dev server:
+### Uninstall
 
 ```bash
-# 1. Start the dev server in the background
-npm start &
-
-# 2. Install the desktop entry
-mkdir -p ~/.local/share/applications
-cp assets/void-ide.desktop ~/.local/share/applications/
-
-# 3. Edit the Exec line to point to your browser
-sed -i 's|Exec=.*|Exec=google-chrome --app=http://localhost:3000 --class=void-ide|' \
-  ~/.local/share/applications/void-ide.desktop
-
-# 4. Update icon path
-sed -i "s|Icon=.*|Icon=$HOME/void-ide/assets/icon.png|" \
-  ~/.local/share/applications/void-ide.desktop
-
-# 5. Refresh app database
-update-desktop-database ~/.local/share/applications
-
-# 6. Set the icon (generate it first)
-python3 scripts/generate_icon.py
+sudo dpkg --purge void-ide
 ```
-
-Void IDE will appear in Show Applications within seconds.
 
 ---
 
-### Option C — AppImage (portable, no install)
+## Connecting your Arduino
+
+If your board is not detected after installing:
 
 ```bash
-chmod +x dist/Void-IDE-1.0.0.AppImage
-./dist/Void-IDE-1.0.0.AppImage
+# Add yourself to the dialout group (if not done by installer)
+sudo usermod -aG dialout $USER
+
+# Log out and back in, then verify
+arduino-cli board list
 ```
 
-To add it to Show Applications manually:
-```bash
-mkdir -p ~/.local/bin
-cp dist/Void-IDE-1.0.0.AppImage ~/.local/bin/void-ide
-chmod +x ~/.local/bin/void-ide
-
-cat > ~/.local/share/applications/void-ide.desktop << EOF
-[Desktop Entry]
-Type=Application
-Name=Void IDE
-Exec=$HOME/.local/bin/void-ide
-Icon=$HOME/void-ide/assets/icon.png
-Categories=Development;Electronics;IDE;
-Comment=Arduino IDE powered by Arduino CLI
-EOF
-
-update-desktop-database ~/.local/share/applications
-```
-
----
-
-## Uninstall
+For **Arduino Nano clones** (CH340 chip), also run:
 
 ```bash
-sudo dpkg -r void-ide
+sudo apt install linux-modules-extra-$(uname -r)
+```
+
+Then unplug and replug your board.
+
+---
+
+## Project Structure
+
+```
+void-ide/
+├── electron/
+│   ├── main.js         ← Electron main process, arduino-cli IPC bridge, serial monitor
+│   └── preload.js      ← Secure contextBridge — exposes window.voidIDE to React
+├── src/
+│   ├── VoidIDE.jsx     ← Entire IDE UI (editor, board manager, library manager, serial)
+│   └── index.js        ← React entry point
+├── public/
+│   └── index.html      ← HTML shell
+├── assets/
+│   ├── icon.png        ← 512x512 app icon
+│   └── icons/          ← Multi-size icons for electron-builder (16–512px)
+├── scripts/
+│   ├── generate_icon.py   ← Generates all icon sizes using Pillow
+│   ├── postinstall.sh     ← Runs after dpkg install
+│   └── postremove.sh      ← Runs after dpkg removal
+└── package.json
 ```
 
 ---
 
-## Wiring the React app to real Arduino CLI
+## How It Works
 
-In `void-ide.jsx`, replace the simulated `doCompile` and `doUpload` functions:
+Void IDE uses Electron's **IPC bridge** to communicate between the React UI and the system:
 
-```js
-// Check if running inside Electron
-const isElectron = typeof window !== 'undefined' && window.voidIDE;
+- `window.voidIDE.compile({ fqbn, sketchDir })` → spawns `arduino-cli compile --fqbn ... --verbose`
+- `window.voidIDE.upload({ fqbn, port, sketchDir })` → spawns `arduino-cli upload -p ... --fqbn ...`
+- `window.voidIDE.serialOpen({ port, baud })` → spawns `arduino-cli monitor -p ... --config baudrate=...`
+- `window.voidIDE.libSearch(query)` → runs `arduino-cli lib search` and returns JSON results
+- `window.voidIDE.coreSearch(query)` → runs `arduino-cli core search` and returns JSON results
 
-const doCompile = useCallback(async () => {
-  if (compiling) return;
-  setCompiling(true);
-  setStatus({ state: 'compiling', text: 'Compiling…' });
-
-  if (isElectron) {
-    // Register real-time output listener
-    window.voidIDE.onCLIOutput(({ line, kind }) => addLog(line, kind));
-
-    // Save sketch first, then compile
-    const saveResult = await window.voidIDE.saveFile({
-      filePath: currentFilePath,   // null = open save dialog
-      content:  activeCode,
-    });
-    if (!saveResult.ok) { setCompiling(false); return; }
-
-    const result = await window.voidIDE.compile({
-      fqbn:      board.fqbn,
-      sketchPath: saveResult.sketchDir,
-    });
-    setStatus({ state: result.ok ? 'success' : 'error',
-                text:  result.ok ? 'Compiled OK' : 'Compile failed' });
-    window.voidIDE.offCLIOutput();
-  } else {
-    // Fallback simulation (browser mode)
-    // ... existing setTimeout simulation ...
-  }
-
-  setCompiling(false);
-}, [compiling, board, activeCode, addLog]);
-```
-
-Same pattern for `doUpload` — call `window.voidIDE.upload({ fqbn, port, sketchPath })`.
+All CLI output is streamed line-by-line back to the output console in real time.
 
 ---
 
-## Serial Monitor (real hardware)
+## Supported Boards (out of the box)
 
-For real serial communication, add to `electron/main.js`:
+| Board | FQBN |
+|---|---|
+| Arduino Uno | `arduino:avr:uno` |
+| Arduino Nano | `arduino:avr:nano` |
+| Arduino Mega 2560 | `arduino:avr:mega` |
+| Arduino Leonardo | `arduino:avr:leonardo` |
+| Arduino Micro | `arduino:avr:micro` |
+| Arduino Pro Mini | `arduino:avr:pro` |
+| ESP32 Dev Module | `esp32:esp32:esp32` |
+| ESP32-S3 | `esp32:esp32:esp32s3` |
+| ESP8266 NodeMCU | `esp8266:esp8266:nodemcuv2` |
+| Raspberry Pi Pico | `rp2040:rp2040:rpipico` |
 
-```js
-const { SerialPort } = require('serialport');
+Any board supported by arduino-cli can be added via the **Board Manager** tab.
 
-ipcMain.handle('serial:open', async (event, { port, baud }) => {
-  // Open port and pipe data back via IPC
-});
-```
+---
 
-Install serialport: `npm install serialport`
+## License
+
+MIT © Ronish Nadar
