@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('voidIDE', {
   // ── arduino-cli ────────────────────────────────────────────────────────────
   version:       ()     => ipcRenderer.invoke('cli:version'),
   boardList:     ()     => ipcRenderer.invoke('cli:board-list'),
+  boardListAll:  ()     => ipcRenderer.invoke('cli:board-list-all'),
   coreList:      ()     => ipcRenderer.invoke('cli:core-list'),
   coreSearch:    (q)    => ipcRenderer.invoke('cli:core-search',    { query: q }),
   coreInstall:   (core) => ipcRenderer.invoke('cli:core-install',   { core }),

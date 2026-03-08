@@ -217,6 +217,19 @@ ipcMain.handle('cli:board-list', async () => {
   return { ok: res.ok, ports };
 });
 
+// ── IPC: All boards from installed cores ─────────────────────────────────────
+ipcMain.handle('cli:board-list-all', async () => {
+  const res = await runCLIJson(['board', 'listall']);
+  const raw = res.data;
+  let boards = [];
+  if (Array.isArray(raw)) boards = raw;
+  else if (raw?.boards) boards = raw.boards;
+  boards = boards
+    .map(b => ({ name: b.name || b.Name, fqbn: b.fqbn || b.FQBN }))
+    .filter(b => b.name && b.fqbn);
+  return { ok: res.ok, boards };
+});
+
 // ── IPC: Installed cores ──────────────────────────────────────────────────────
 ipcMain.handle('cli:core-list', async () => {
   const res = await runCLIJson(['core', 'list']);

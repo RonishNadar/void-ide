@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 
 const FONT_LINK = `@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap');`;
 
@@ -24,11 +24,7 @@ const CSS = `
     padding:40px 48px;width:560px;display:flex;flex-direction:column;gap:20px;
     box-shadow:0 24px 64px rgba(0,0,0,.5)}
   .setup-logo{display:flex;align-items:center;gap:12px;margin-bottom:4px}
-  .setup-hex{width:36px;height:36px;background:var(--cyan);
-    clip-path:polygon(50% 0%,95% 25%,95% 75%,50% 100%,5% 75%,5% 25%);
-    display:flex;align-items:center;justify-content:center;
-    font-size:12px;font-weight:800;color:#080a0d;font-family:var(--mono);
-    box-shadow:0 0 18px rgba(78,201,201,.5);flex-shrink:0}
+  .setup-hex{width:36px;height:36px;flex-shrink:0}
   .setup-title{font-size:22px;font-weight:800;color:var(--white)}
   .setup-sub{font-size:13px;color:var(--text2);line-height:1.6}
   .setup-step{display:flex;align-items:flex-start;gap:12px;padding:14px;
@@ -53,10 +49,6 @@ const CSS = `
   .titlebar{display:flex;align-items:center;gap:10px;padding:0 14px;height:44px;
     background:var(--bg1);border-bottom:1px solid var(--line);user-select:none;flex-shrink:0}
   .logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px;letter-spacing:.5px;color:var(--white)}
-  .logo-hex{width:26px;height:26px;background:var(--cyan);
-    clip-path:polygon(50% 0%,95% 25%,95% 75%,50% 100%,5% 75%,5% 25%);
-    display:flex;align-items:center;justify-content:center;font-size:9px;
-    font-weight:800;color:#080a0d;font-family:var(--mono);box-shadow:0 0 14px rgba(78,201,201,.45)}
   .pill{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--line);
     border-radius:20px;padding:4px 12px 4px 8px;font-size:11px;font-family:var(--mono);
     color:var(--text2);cursor:pointer;transition:border-color .15s,color .15s}
@@ -211,6 +203,24 @@ const CSS = `
   .drop-sub{font-size:10px;color:var(--muted);margin-left:auto}
   .c-kw{color:#c678dd} .c-type{color:#61afef} .c-num{color:#d19a66}
   .c-str{color:#98c379} .c-cmt{color:#5c6370;font-style:italic} .c-pre{color:#e06c75}
+
+  /* ── Error / warning gutters ── */
+  .gutter-wrap{position:relative}
+  .err-gutter{position:absolute;right:0;top:0;width:14px}
+  .err-mark{position:absolute;right:2px;width:8px;height:8px;border-radius:50%;cursor:pointer;
+    transition:transform .1s}
+  .err-mark:hover{transform:scale(1.4)}
+  .err-mark.error{background:var(--red);box-shadow:0 0 4px var(--red)}
+  .err-mark.warning{background:var(--amber);box-shadow:0 0 4px var(--amber)}
+  .err-tooltip{position:fixed;z-index:300;background:var(--bg3);border:1px solid var(--red);
+    border-radius:4px;padding:5px 10px;font-family:var(--mono);font-size:11px;
+    color:var(--text);max-width:380px;pointer-events:none;line-height:1.5;
+    box-shadow:0 8px 24px rgba(0,0,0,.5)}
+  .err-tooltip.warning{border-color:var(--amber)}
+
+  /* ── Error underlines in highlight layer ── */
+  .err-line{background:rgba(224,90,90,.08);border-bottom:1px solid var(--red)}
+  .warn-line{background:rgba(240,192,64,.05);border-bottom:1px solid var(--amber)}
 `;
 
 // ── Syntax highlight ──────────────────────────────────────────────────────────
@@ -288,7 +298,15 @@ function SetupScreen({ onDone }) {
     <div className="setup">
       <div className="setup-box">
         <div className="setup-logo">
-          <div className="setup-hex">{'{}'}</div>
+          <svg className="setup-hex" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="18,1 34,9.5 34,26.5 18,35 2,26.5 2,9.5"
+                fill="#080a0d" stroke="#4ec9c9" strokeWidth="2"/>
+              <text x="18" y="23" textAnchor="middle" fontFamily="JetBrains Mono,monospace"
+                fontSize="13" fontWeight="800" fill="#4ec9c9">{"{}"}</text>
+              <polygon points="18,1 34,9.5 34,26.5 18,35 2,26.5 2,9.5"
+                fill="none" stroke="#4ec9c9" strokeWidth="2"
+                style={{filter:'drop-shadow(0 0 6px rgba(78,201,201,0.7))'}}/>
+            </svg>
           <div>
             <div className="setup-title">Void IDE</div>
             <div style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--mono)' }}>First-time setup</div>
@@ -370,6 +388,19 @@ export default function VoidIDE() {
   const [activeTab, setActive]= useState(1);
   const [detectedPorts, setDetectedPorts] = useState([]);
   const [board, setBoard]     = useState({ name: 'Arduino Uno', fqbn: 'arduino:avr:uno' });
+  const [boardSearch, setBoardSearch] = useState('');
+  const [boardList, setBoardList] = useState([
+    { name: 'Arduino Uno',       fqbn: 'arduino:avr:uno' },
+    { name: 'Arduino Nano',      fqbn: 'arduino:avr:nano' },
+    { name: 'Arduino Mega 2560', fqbn: 'arduino:avr:mega' },
+    { name: 'Arduino Leonardo',  fqbn: 'arduino:avr:leonardo' },
+    { name: 'Arduino Micro',     fqbn: 'arduino:avr:micro' },
+    { name: 'Arduino Pro Mini',  fqbn: 'arduino:avr:pro' },
+    { name: 'ESP32 Dev Module',  fqbn: 'esp32:esp32:esp32' },
+    { name: 'ESP32-S3',          fqbn: 'esp32:esp32:esp32s3' },
+    { name: 'ESP8266 NodeMCU',   fqbn: 'esp8266:esp8266:nodemcuv2' },
+    { name: 'Raspberry Pi Pico', fqbn: 'rp2040:rp2040:rpipico' },
+  ]);
   const [port, setPort]       = useState('');
   const [showBD, setShowBD]   = useState(false);
   const [showPD, setShowPD]   = useState(false);
@@ -392,10 +423,17 @@ export default function VoidIDE() {
   const [baud, setBaud]       = useState('9600');
   const [serialLogs, setSerialLogs]   = useState([]);
   const [serialInput, setSerialInput] = useState('');
-  const conEnd  = useRef(null);
-  const serEnd  = useRef(null);
-  const libTimer  = useRef(null);
-  const coreTimer = useRef(null);
+  const [errorLines, setErrorLines] = useState({});
+  const conEnd      = useRef(null);
+  const serEnd      = useRef(null);
+  const libTimer    = useRef(null);
+  const coreTimer   = useRef(null);
+  const syntaxTimer    = useRef(null);
+  const portPollRef    = useRef(null);
+  const portMissCount  = useRef({});
+  const compileErrors = useRef([]);
+  const gutterRef     = useRef(null);
+  const overlayRef    = useRef(null);
 
   useEffect(() => { conEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [logs]);
   useEffect(() => { serEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [serialLogs]);
@@ -444,7 +482,86 @@ export default function VoidIDE() {
       setSerialLogs(prev => [...prev, { text: '--- port closed ---', type: 'sys' }]);
     });
 
-    return () => { window.voidIDE.offCLILine?.(); window.voidIDE.offSerial?.(); };
+    // Load boards from installed cores and merge with defaults
+    const loadInstalledBoards = async () => {
+      const r = await window.voidIDE.boardListAll();
+      if (r?.ok && r.boards?.length) {
+        setBoardList(prev => {
+          const existing = new Set(prev.map(b => b.fqbn));
+          const extra = r.boards.filter(b => b.fqbn && !existing.has(b.fqbn));
+          return [...prev, ...extra];
+        });
+      }
+    };
+    loadInstalledBoards();
+
+    // Auto-detect port + board changes every 2 seconds
+    portPollRef.current = setInterval(async () => {
+      const r = await window.voidIDE.boardList();
+      if (!r.ok) return;
+
+      // Normalize port entries — handle both old and new arduino-cli JSON shapes
+      const entries = (r.ports || []).map(p => ({
+        address: p.port?.address || p.address || p.port || '',
+        fqbn:    p.matching_boards?.[0]?.fqbn || p.boards?.[0]?.fqbn || p.fqbn || '',
+        name:    p.matching_boards?.[0]?.name || p.boards?.[0]?.name || p.name || '',
+      })).filter(p => p.address);
+
+      const newAddresses = entries.map(p => p.address);
+
+      setDetectedPorts(prev => {
+        // Find newly added ports
+        const added = entries.filter(p => !prev.includes(p.address));
+
+        if (added.length > 0) {
+          const newest = added[0];
+          // Auto-select port
+          setPort(newest.address);
+          // Auto-select matching board if we know its FQBN
+          if (newest.fqbn) {
+            setBoardList(bl => {
+              const match = bl.find(b => b.fqbn === newest.fqbn);
+              if (match) {
+                setBoard(match);
+                addLog(`Auto-detected: ${match.name} on ${newest.address}`, 'success');
+              } else {
+                // Board not in list yet — add it dynamically
+                const newBoard = { name: newest.name || newest.fqbn, fqbn: newest.fqbn };
+                setBoard(newBoard);
+                addLog(`Auto-detected: ${newBoard.name} on ${newest.address}`, 'success');
+                return [...bl, newBoard];
+              }
+              return bl;
+            });
+          } else {
+            addLog(`Device connected on ${newest.address} (board unknown — select manually)`, 'warning');
+          }
+        }
+
+        // Only clear a port after it's been missing 3 polls in a row
+        // Prevents false disconnects when arduino-cli board list returns empty briefly
+        setPort(cur => {
+          if (!cur) return newAddresses[0] || '';
+          if (newAddresses.includes(cur)) {
+            portMissCount.current[cur] = 0; // reset miss counter
+            return cur;
+          }
+          portMissCount.current[cur] = (portMissCount.current[cur] || 0) + 1;
+          if (portMissCount.current[cur] >= 3) {
+            delete portMissCount.current[cur];
+            return newAddresses[0] || '';
+          }
+          return cur; // keep current port, still within grace period
+        });
+        return newAddresses.length > 0 ? newAddresses : prev; // don't wipe list on empty response
+      });
+    }, 2000);
+
+    return () => {
+      window.voidIDE.offCLILine?.();
+      window.voidIDE.offSerial?.();
+      clearInterval(portPollRef.current);
+    };
   }, [ready]);
 
   const refreshPorts = useCallback(async () => {
@@ -462,7 +579,11 @@ export default function VoidIDE() {
 
   const activeCode  = tabs.find(t => t.id === activeTab)?.code ?? '';
   const currentTab  = tabs.find(t => t.id === activeTab);
-  const updateCode  = val => setTabs(prev => prev.map(t => t.id === activeTab ? { ...t, code: val, dirty: true } : t));
+  const updateCode = val => {
+    setTabs(prev => prev.map(t => t.id === activeTab ? { ...t, code: val, dirty: true } : t));
+    instantSyntaxCheck(val);   // instant — runs client-side on every keystroke
+    triggerSyntaxCheck(val);   // deep — runs arduino-cli compile after 300ms idle
+  };
 
   const addNewTab = () => {
     const id = Date.now();
@@ -519,36 +640,187 @@ export default function VoidIDE() {
     return tab.sketchDir;
   };
 
+  // ── Parse error lines from compile output ────────────────────────────────
+  const parseErrors = useCallback((logLines) => {
+    const errs = {};
+    for (const line of logLines) {
+      const m = line.match(/([^\s]+\.ino):(\d+):\d+:\s*(error|warning):\s*(.+)/);
+      if (!m) continue;
+      // arduino-cli reports the line AFTER the error (e.g. missing semicolon shows on next line)
+      // subtract 1 to point at the actual offending line
+      const lineNum = Math.max(1, parseInt(m[2], 10) - 1);
+      const kind    = m[3];
+      const msg     = m[4].trim();
+      if (msg.startsWith('In file') || msg.startsWith('note:') || msg.startsWith('In member')) continue;
+      if (!errs[lineNum] || kind === 'error') {
+        errs[lineNum] = { msg, kind };
+      }
+    }
+    setErrorLines(errs);
+    compileErrors.current = errs;
+    return errs;
+  }, []);
+
   // ── Compile ───────────────────────────────────────────────────────────────
   const handleCompile = useCallback(async () => {
     if (busy || !isElectron) return;
+    setErrorLines({});
     setBusy(true); setProgress(10); setStatus({ state: 'busy', text: 'Compiling…' });
     const sketchDir = await ensureSaved(tabs.find(t => t.id === activeTab));
     if (!sketchDir) { setBusy(false); setProgress(0); setStatus({ state: 'idle', text: 'Ready' }); return; }
     setProgress(30);
+    const capturedLines = [];
+    const origLog = (text, kind) => { capturedLines.push(text); addLog(text, kind); };
+    window.voidIDE.offCLILine();
+    window.voidIDE.onCLILine(({ text, kind }) => origLog(text, kind));
     const r = await window.voidIDE.compile({ fqbn: board.fqbn, sketchDir });
+    window.voidIDE.offCLILine();
+    window.voidIDE.onCLILine(({ text, kind }) => addLog(text, kind));
     setProgress(100);
-    setStatus({ state: r.ok ? 'ok' : 'fail', text: r.ok ? 'Compiled OK' : 'Compile failed' });
-    if (r.ok) addLog('✓ Compilation successful', 'success');
+    if (r.ok) {
+      setErrorLines({});
+      setStatus({ state: 'ok', text: 'Compiled OK' });
+      addLog('✓ Compilation successful', 'success');
+    } else {
+      parseErrors(capturedLines);
+      setStatus({ state: 'fail', text: 'Compile failed' });
+    }
     setBusy(false);
     setTimeout(() => setProgress(0), 800);
-  }, [busy, tabs, activeTab, board, addLog]);
+    return r.ok;
+  }, [busy, tabs, activeTab, board, addLog, parseErrors]);
 
-  // ── Upload ────────────────────────────────────────────────────────────────
+  // ── Upload (compiles first, then uploads) ────────────────────────────────
   const handleUpload = useCallback(async () => {
     if (busy || !isElectron) return;
     if (!port) { addLog('No port selected. Plug in your board and click Refresh.', 'error'); return; }
-    setBusy(true); setProgress(10); setStatus({ state: 'busy', text: 'Uploading…' });
+    setErrorLines({});
+    setBusy(true); setProgress(5); setStatus({ state: 'busy', text: 'Compiling…' });
     const sketchDir = await ensureSaved(tabs.find(t => t.id === activeTab));
     if (!sketchDir) { setBusy(false); setProgress(0); setStatus({ state: 'idle', text: 'Ready' }); return; }
-    setProgress(40);
-    const r = await window.voidIDE.upload({ fqbn: board.fqbn, port, sketchDir });
+
+    // Step 1: Compile
+    setProgress(15);
+    const capturedLines = [];
+    window.voidIDE.offCLILine();
+    window.voidIDE.onCLILine(({ text, kind }) => { capturedLines.push(text); addLog(text, kind); });
+    const compileResult = await window.voidIDE.compile({ fqbn: board.fqbn, sketchDir });
+    window.voidIDE.offCLILine();
+    window.voidIDE.onCLILine(({ text, kind }) => addLog(text, kind));
+
+    if (!compileResult.ok) {
+      parseErrors(capturedLines);
+      setStatus({ state: 'fail', text: 'Compile failed — upload aborted' });
+      addLog('✗ Compile failed. Fix errors before uploading.', 'error');
+      setBusy(false);
+      setTimeout(() => setProgress(0), 800);
+      return;
+    }
+
+    addLog('✓ Compilation successful', 'success');
+    setProgress(50);
+
+    // Step 2: Upload
+    setStatus({ state: 'busy', text: 'Uploading…' });
+    const uploadResult = await window.voidIDE.upload({ fqbn: board.fqbn, port, sketchDir });
     setProgress(100);
-    setStatus({ state: r.ok ? 'ok' : 'fail', text: r.ok ? 'Upload OK' : 'Upload failed' });
-    if (r.ok) addLog(`✓ Upload complete → ${port}`, 'success');
+    setStatus({ state: uploadResult.ok ? 'ok' : 'fail', text: uploadResult.ok ? 'Upload OK' : 'Upload failed' });
+    if (uploadResult.ok) addLog(`✓ Upload complete → ${port}`, 'success');
     setBusy(false);
     setTimeout(() => setProgress(0), 800);
-  }, [busy, tabs, activeTab, board, port, addLog]);
+  }, [busy, tabs, activeTab, board, port, addLog, parseErrors]);
+
+  // ── Instant client-side syntax checks (runs on every keystroke) ─────────
+  // Catches the most common errors immediately without invoking arduino-cli
+  const instantSyntaxCheck = useCallback((code) => {
+    const lines = code.split('\n');
+    const errs = {};
+
+    // Track brace/paren/bracket balance
+    let braces = 0, parens = 0, brackets = 0;
+    let inString = false, inChar = false, inLineComment = false, inBlockComment = false;
+    let lastOpenBrace = null;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      inLineComment = false;
+
+      for (let j = 0; j < line.length; j++) {
+        const c = line[j], n = line[j+1];
+
+        if (inBlockComment) { if (c === '*' && n === '/') { inBlockComment = false; j++; } continue; }
+        if (inLineComment) break;
+        if (inString)  { if (c === '\\') { j++; } else if (c === '"') inString = false; continue; }
+        if (inChar)    { if (c === '\\') { j++; } else if (c === "'") inChar = false; continue; }
+
+        if (c === '/' && n === '/') { inLineComment = true; break; }
+        if (c === '/' && n === '*') { inBlockComment = true; j++; continue; }
+        if (c === '"') { inString = true; continue; }
+        if (c === "'") { inChar = true; continue; }
+
+        if (c === '{') { braces++;   lastOpenBrace = i+1; }
+        if (c === '}') { braces--;   if (braces < 0) { errs[i+1] = { msg: 'Unexpected }', kind: 'error' }; braces = 0; } }
+        if (c === '(') { parens++;   }
+        if (c === ')') { parens--;   if (parens < 0) { errs[i+1] = { msg: 'Unexpected )', kind: 'error' }; parens = 0; } }
+        if (c === '[') { brackets++; }
+        if (c === ']') { brackets--; if (brackets < 0) { errs[i+1] = { msg: 'Unexpected ]', kind: 'error' }; brackets = 0; } }
+      }
+
+      // Missing semicolon heuristic: statement lines not ending with ; { } , \ or :
+      const trimmed = line.trim();
+      if (
+        trimmed.length > 0 &&
+        !trimmed.startsWith('//') &&
+        !trimmed.startsWith('#') &&
+        !trimmed.startsWith('*') &&
+        !trimmed.endsWith(';') &&
+        !trimmed.endsWith('{') &&
+        !trimmed.endsWith('}') &&
+        !trimmed.endsWith(',') &&
+        !trimmed.endsWith(':') &&
+        !trimmed.endsWith('\\') &&
+        !trimmed.endsWith('(') &&
+        !/^(void|int|float|double|bool|char|byte|unsigned|long|short|if|else|for|while|do|class|struct|typedef|#)/.test(trimmed) &&
+        /^[a-zA-Z_]/.test(trimmed) &&
+        trimmed.includes('(') &&
+        trimmed.includes(')')
+      ) {
+        if (!errs[i+1]) errs[i+1] = { msg: 'Missing semicolon?', kind: 'warning' };
+      }
+    }
+
+    // Unclosed braces
+    if (braces > 0 && lastOpenBrace) {
+      errs[lastOpenBrace] = { msg: `Unclosed { — missing ${braces} closing brace${braces>1?'s':''}`, kind: 'error' };
+    }
+
+    setErrorLines(errs);
+    compileErrors.current = errs;
+  }, []);
+
+  // ── Background syntax check (debounced, 2s after typing stops) ───────────
+  const triggerSyntaxCheck = useCallback((code) => {
+    if (!isElectron) return;
+    clearTimeout(syntaxTimer.current);
+    syntaxTimer.current = setTimeout(async () => {
+      const tab = tabs.find(t => t.id === activeTab);
+      if (!tab?.sketchDir) return; // only check saved sketches
+      const capturedLines = [];
+      window.voidIDE.offCLILine();
+      window.voidIDE.onCLILine(({ text }) => capturedLines.push(text));
+      // Write current code to disk silently without changing dirty state
+      await window.voidIDE.saveCurrent({ filePath: tab.filePath, content: code });
+      const r = await window.voidIDE.compile({ fqbn: board.fqbn, sketchDir: tab.sketchDir });
+      window.voidIDE.offCLILine();
+      window.voidIDE.onCLILine(({ text, kind }) => addLog(text, kind));
+      if (r.ok) {
+        setErrorLines({});  // clean compile — clear all markers
+      } else {
+        // Deep errors override instant checks for the same lines
+        parseErrors(capturedLines);
+      }
+    }, 300);
+  }, [tabs, activeTab, board, addLog, parseErrors, instantSyntaxCheck]);
 
   // ── Library search (debounced) ────────────────────────────────────────────
   const handleLibSearch = q => {
@@ -619,7 +891,13 @@ export default function VoidIDE() {
   };
 
   const lineCount = activeCode.split('\n').length;
-  const lineNums  = Array.from({ length: lineCount }, (_, i) => i + 1).join('\n');
+
+  // Build highlighted code — NO background spans in the pre layer
+  // Background highlights are handled via a separate overlay div to avoid cursor shift
+  const highlightWithErrors = (code) => highlight(code);
+
+  // Error gutter tooltip state
+  const [tooltip, setTooltip] = React.useState(null);
 
   // ── Render: checking ──────────────────────────────────────────────────────
   if (ready === null) {
@@ -651,7 +929,18 @@ export default function VoidIDE() {
 
         {/* Title bar */}
         <div className="titlebar">
-          <div className="logo"><div className="logo-hex">{'{}'}</div>VOID IDE</div>
+          <div className="logo">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="14,1 26,7.5 26,20.5 14,27 2,20.5 2,7.5"
+                fill="#080a0d" stroke="#4ec9c9" strokeWidth="1.5"/>
+              <text x="14" y="18.5" textAnchor="middle" fontFamily="JetBrains Mono,monospace"
+                fontSize="10" fontWeight="800" fill="#4ec9c9" letterSpacing="-0.5">{"{}"}</text>
+              <polygon points="14,1 26,7.5 26,20.5 14,27 2,20.5 2,7.5"
+                fill="none" stroke="#4ec9c9" strokeWidth="1.5"
+                style={{filter:'drop-shadow(0 0 4px rgba(78,201,201,0.6))'}}/>
+            </svg>
+            VOID IDE
+          </div>
           <div style={{ width: 1, height: 20, background: 'var(--line)', margin: '0 4px' }} />
           <div className="pill" onClick={() => { setShowBD(true); setShowPD(false); }}>
             <span className="pill-dot" style={{ background: 'var(--green)' }} />
@@ -732,10 +1021,60 @@ export default function VoidIDE() {
               <div className="tab-add" onClick={addNewTab}>+</div>
             </div>
             <div className="code-wrap">
-              <div className="line-nums">{lineNums}</div>
+              {/* Line numbers + inline error dots — scroll together */}
+              <div ref={gutterRef} style={{
+                width:68,flexShrink:0,background:'var(--bg0)',
+                overflowY:'hidden',overflowX:'hidden',
+                fontFamily:'var(--mono)',fontSize:13,lineHeight:'1.7em',
+                paddingTop:16,paddingBottom:16,boxSizing:'border-box',
+                userSelect:'none'
+              }}>
+                {Array.from({length:lineCount},(_,i)=>i+1).map(n=>{
+                  const err = errorLines[n];
+                  return (
+                    <div key={n} style={{
+                      height:'1.7em',display:'flex',alignItems:'center',
+                      justifyContent:'flex-end',gap:3,paddingRight:4
+                    }}>
+                      <span style={{
+                        color:err?(err.kind==='error'?'var(--red)':'var(--amber)'):'var(--bg4)',
+                        fontWeight:err?700:400,minWidth:30,textAlign:'right',fontSize:13
+                      }}>
+                        {n}
+                      </span>
+                      {err ? (
+                        <span
+                          className={`err-mark ${err.kind}`}
+                          style={{flexShrink:0,display:'inline-block'}}
+                          onMouseEnter={e => setTooltip({msg:err.msg,kind:err.kind,x:e.clientX,y:e.clientY})}
+                          onMouseLeave={() => setTooltip(null)}
+                        />
+                      ) : <span style={{width:8,display:'inline-block',flexShrink:0}}/>}
+                    </div>
+                  );
+                })}
+              </div>
               <div className="code-layer">
-                <pre className="code-hl" dangerouslySetInnerHTML={{ __html: highlight(activeCode) }} />
+                {/* Error line background overlay — behind both pre and textarea */}
+                <div ref={overlayRef} aria-hidden="true" style={{
+                  position:'absolute',inset:0,padding:'16px 0',
+                  pointerEvents:'none',zIndex:0,overflow:'hidden',fontFamily:'var(--mono)',
+                  fontSize:13,lineHeight:'1.7em'
+                }}>
+                  {activeCode.split('\n').map((_, i) => {
+                    const err = errorLines[i + 1];
+                    if (!err) return <div key={i} style={{height:'1.7em'}} />;
+                    return <div key={i} style={{
+                      height:'1.7em',
+                      background: err.kind === 'error' ? 'rgba(224,90,90,0.10)' : 'rgba(240,192,64,0.07)',
+                      borderLeft: `2px solid ${err.kind === 'error' ? 'var(--red)' : 'var(--amber)'}`,
+                      width:'100%'
+                    }}/>;
+                  })}
+                </div>
+                <pre className="code-hl" style={{zIndex:1}} dangerouslySetInnerHTML={{ __html: highlightWithErrors(activeCode) }} />
                 <textarea className="code-ta" value={activeCode} onChange={e => updateCode(e.target.value)} spellCheck={false}
+                  onScroll={e => { if (gutterRef.current) gutterRef.current.scrollTop = e.target.scrollTop; if (overlayRef.current) overlayRef.current.scrollTop = e.target.scrollTop; }}
                   onKeyDown={e => {
                     if (e.key === 'Tab') { e.preventDefault(); const s = e.target.selectionStart, en = e.target.selectionEnd; updateCode(activeCode.slice(0, s) + '  ' + activeCode.slice(en)); setTimeout(() => { e.target.selectionStart = e.target.selectionEnd = s + 2; }, 0); }
                     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave(); }
@@ -913,25 +1252,50 @@ export default function VoidIDE() {
 
       {/* Board dropdown */}
       {showBD && (
-        <><div className="drop-ov" onClick={() => setShowBD(false)} />
-          <div className="drop-menu" style={{ top: 48, left: 180 }}>
-            {[
-              { name: 'Arduino Uno',        fqbn: 'arduino:avr:uno' },
-              { name: 'Arduino Nano',       fqbn: 'arduino:avr:nano' },
-              { name: 'Arduino Mega 2560',  fqbn: 'arduino:avr:mega' },
-              { name: 'Arduino Leonardo',   fqbn: 'arduino:avr:leonardo' },
-              { name: 'Arduino Micro',      fqbn: 'arduino:avr:micro' },
-              { name: 'Arduino Pro Mini',   fqbn: 'arduino:avr:pro' },
-              { name: 'ESP32 Dev Module',   fqbn: 'esp32:esp32:esp32' },
-              { name: 'ESP32-S3',           fqbn: 'esp32:esp32:esp32s3' },
-              { name: 'ESP8266 NodeMCU',    fqbn: 'esp8266:esp8266:nodemcuv2' },
-              { name: 'Raspberry Pi Pico',  fqbn: 'rp2040:rp2040:rpipico' },
-            ].map(b => (
-              <div key={b.fqbn} className={`drop-item ${b.fqbn === board.fqbn ? 'sel' : ''}`}
-                onClick={() => { setBoard(b); setShowBD(false); addLog(`Board → ${b.name}`, 'system'); }}>
-                {b.name}<span className="drop-sub">{b.fqbn}</span>
-              </div>
-            ))}
+        <><div className="drop-ov" onClick={() => { setShowBD(false); setBoardSearch(''); }} />
+          <div className="drop-menu" style={{ top: 48, left: 180, maxHeight: 420, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '6px 8px', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
+              <input
+                autoFocus
+                className="sinput"
+                style={{ margin: 0, width: '100%' }}
+                placeholder="Search boards…"
+                value={boardSearch}
+                onChange={e => setBoardSearch(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Escape') { setShowBD(false); setBoardSearch(''); }
+                  if (e.key === 'Enter') {
+                    const match = boardList.find(b =>
+                      b.name.toLowerCase().includes(boardSearch.toLowerCase()) ||
+                      b.fqbn.toLowerCase().includes(boardSearch.toLowerCase())
+                    );
+                    if (match) { setBoard(match); setShowBD(false); setBoardSearch(''); addLog(`Board → ${match.name}`, 'system'); }
+                  }
+                }}
+              />
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {boardList
+                .filter(b =>
+                  !boardSearch ||
+                  b.name.toLowerCase().includes(boardSearch.toLowerCase()) ||
+                  b.fqbn.toLowerCase().includes(boardSearch.toLowerCase())
+                )
+                .map(b => (
+                  <div key={b.fqbn} className={`drop-item ${b.fqbn === board.fqbn ? 'sel' : ''}`}
+                    onClick={() => { setBoard(b); setShowBD(false); setBoardSearch(''); addLog(`Board → ${b.name}`, 'system'); }}>
+                    {b.name}<span className="drop-sub">{b.fqbn}</span>
+                  </div>
+                ))
+              }
+              {boardList.filter(b =>
+                !boardSearch ||
+                b.name.toLowerCase().includes(boardSearch.toLowerCase()) ||
+                b.fqbn.toLowerCase().includes(boardSearch.toLowerCase())
+              ).length === 0 && (
+                <div className="drop-item" style={{ color: 'var(--muted)' }}>No boards found</div>
+              )}
+            </div>
           </div>
         </>
       )}
@@ -941,13 +1305,16 @@ export default function VoidIDE() {
         <><div className="drop-ov" onClick={() => setShowPD(false)} />
           <div className="drop-menu" style={{ top: 48, left: 410 }}>
             {detectedPorts.length === 0
-              ? <div className="drop-item" style={{ color: 'var(--muted)' }}>No ports — plug in board then Refresh</div>
-              : detectedPorts.map(p => (
-                <div key={p} className={`drop-item ${p === port ? 'sel' : ''}`}
-                  onClick={() => { setPort(p); setShowPD(false); addLog(`Port → ${p}`, 'system'); }}>
-                  {p}
-                </div>
-              ))
+              ? <div className="drop-item" style={{ color: 'var(--muted)' }}>No ports — plug in board then wait</div>
+              : detectedPorts.map(p => {
+                  const detected = detectedPorts.find ? p : p;
+                  return (
+                    <div key={p} className={`drop-item ${p === port ? 'sel' : ''}`}
+                      onClick={() => { setPort(p); setShowPD(false); addLog(`Port → ${p}`, 'system'); }}>
+                      {p}
+                    </div>
+                  );
+                })
             }
             <div style={{ borderTop: '1px solid var(--line)', marginTop: 4, paddingTop: 4 }}>
               <div className="drop-item" onClick={() => { refreshPorts(); setShowPD(false); }}>{I.refresh} Refresh ports</div>
@@ -988,6 +1355,13 @@ export default function VoidIDE() {
               <button className="ser-send" onClick={handleSerialSend} disabled={!serialOpen}>Send</button>
             </div>
           </div>
+        </div>
+      )}
+    {/* Error tooltip */}
+      {tooltip && (
+        <div className={`err-tooltip ${tooltip.kind}`}
+          style={{left: Math.min(tooltip.x + 12, window.innerWidth - 400), top: tooltip.y - 36}}>
+          {tooltip.kind === 'error' ? '✕' : '⚠'} {tooltip.msg}
         </div>
       )}
     </>
