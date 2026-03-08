@@ -131,7 +131,7 @@ For **Arduino Nano clones** (CH340 chip), also run:
 sudo apt install linux-modules-extra-$(uname -r)
 ```
 
-Then unplug and replug your board
+Then unplug and replug your board.
 
 ---
 
