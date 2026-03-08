@@ -49,7 +49,7 @@ jobs:
       # ── 5. Generate icon ─────────────────────────────────────────────────────
       - name: Generate icons
         run: |
-          pip3 install Pillow --break-system-packages
+          pip3 install Pillow
           python3 scripts/generate_icon.py
 
       # ── 6. Build .deb ────────────────────────────────────────────────────────
