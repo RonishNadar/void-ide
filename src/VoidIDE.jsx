@@ -276,7 +276,7 @@ function highlight(code) {
 const ts = () => new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 const isElectron = typeof window !== 'undefined' && !!window.voidIDE;
 
-const DEFAULT_CODE = `// Void IDE — New Sketch\n\nvoid setup() {\n  pinMode(LED_BUILTIN, OUTPUT);\n  Serial.begin(9600);\n}\n\nvoid loop() {\n  digitalWrite(LED_BUILTIN, HIGH);\n  Serial.println("ON");\n  delay(500);\n  digitalWrite(LED_BUILTIN, LOW);\n  Serial.println("OFF");\n  delay(500);\n}\n`;
+const DEFAULT_CODE = `void setup() {\n  \n}\n\nvoid loop() {\n  \n}\n`;
 
 const I = {
   verify:  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8"><polyline points="2,9 6,13 14,4"/></svg>,
@@ -469,7 +469,8 @@ export default function VoidIDE() {
   const [serialOpen, setSerialOpen]   = useState(false);
   const [baud, setBaud]       = useState('9600');
   const [serialLogs, setSerialLogs]   = useState([]);
-  const [serialInput, setSerialInput] = useState('');
+  const [serialInput, setSerialInput]   = useState('');
+  const [lineEnding, setLineEnding]     = useState('\n'); // \n, \r\n, \r, ''
   const [errorLines, setErrorLines] = useState({});
   const conEnd      = useRef(null);
   const serEnd      = useRef(null);
@@ -1084,7 +1085,7 @@ export default function VoidIDE() {
 
   const handleSerialSend = async () => {
     if (!serialInput.trim() || !serialOpen) return;
-    await window.voidIDE.serialWrite(serialInput);
+    await window.voidIDE.serialWrite(serialInput + lineEnding);
     setSerialLogs(p => [...p, { text: `> ${serialInput}`, type: 'out' }]);
     setSerialInput('');
   };
@@ -1839,6 +1840,15 @@ export default function VoidIDE() {
               <input className="ser-input" placeholder="Send to device…" value={serialInput}
                 onChange={e => setSerialInput(e.target.value)} disabled={!serialOpen}
                 onKeyDown={e => e.key === 'Enter' && handleSerialSend()} />
+              <select value={lineEnding} onChange={e => setLineEnding(e.target.value)}
+                style={{background:'var(--bg2)',border:'1px solid var(--line)',borderRadius:'var(--r)',
+                  color:'var(--text)',fontFamily:'var(--mono)',fontSize:11,padding:'6px 8px',
+                  cursor:'pointer',flexShrink:0}}>
+                <option value="">No line ending</option>
+                <option value="\n">New line</option>
+                <option value="\r">Carriage return</option>
+                <option value="\r\n">Both NL & CR</option>
+              </select>
               <button className="ser-send" onClick={handleSerialSend} disabled={!serialOpen}>Send</button>
             </div>
           </div>
