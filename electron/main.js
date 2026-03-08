@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
 const { spawn, execSync, exec } = require('child_process');
 const path   = require('path');
 const fs     = require('fs');
@@ -217,6 +217,94 @@ ipcMain.handle('cli:board-list', async () => {
   return { ok: res.ok, ports };
 });
 
+// ── IPC: Library examples — scans filesystem directly ───────────────────────
+ipcMain.handle('cli:lib-examples', async () => {
+  const examples = [];
+
+  // arduino-cli stores libs in ~/Arduino/libraries and ~/.arduino15/... 
+  // We also check the data dir from arduino-cli config
+  const homedir = require('os').homedir();
+
+  // Only scan user-installed libraries — NOT core-bundled ones in .arduino15
+  // Core-bundled libs (Servo, Ethernet, SD etc.) show up but can't be used
+  // without separately installing them, which is confusing.
+  const candidateDirs = [
+    path.join(homedir, 'Arduino', 'libraries'),
+    path.join(homedir, 'snap', 'arduino', 'current', 'Arduino', 'libraries'),
+  ];
+
+  // Also check arduino-cli's configured user directory
+  try {
+    const cfgRes = await runCLIJson(['config', 'dump']);
+    const cfg = cfgRes.data;
+    const libDir = cfg?.directories?.user
+      ? path.join(cfg.directories.user, 'libraries')
+      : null;
+    if (libDir && !candidateDirs.includes(libDir)) candidateDirs.unshift(libDir);
+  } catch {}
+
+  const scannedDirs = [];
+  for (const libsDir of candidateDirs) {
+    if (!fs.existsSync(libsDir)) continue;
+    scannedDirs.push(libsDir);
+    let libFolders;
+    try { libFolders = fs.readdirSync(libsDir); } catch { continue; }
+
+    for (const libName of libFolders) {
+      const libDir = path.join(libsDir, libName);
+      // Check both 'examples' and 'Examples' (case-sensitive on Linux)
+      const exDirLower = path.join(libDir, 'examples');
+      const exDirUpper = path.join(libDir, 'Examples');
+      const examplesDir = fs.existsSync(exDirLower) ? exDirLower
+        : fs.existsSync(exDirUpper) ? exDirUpper : null;
+
+      if (!examplesDir) continue;
+
+      // Walk recursively up to 2 levels deep to find .ino files
+      const walkExamples = (dir, depth = 0) => {
+        if (depth > 2) return;
+        let entries;
+        try { entries = fs.readdirSync(dir); } catch { return; }
+        const hasIno = entries.some(f => f.endsWith('.ino'));
+        if (hasIno) {
+          const inoFile = entries.find(f => f.endsWith('.ino'));
+          const exName = path.basename(dir);
+          examples.push({ lib: libName, name: exName, path: path.join(dir, inoFile) });
+        } else {
+          for (const entry of entries) {
+            const full = path.join(dir, entry);
+            try {
+              if (fs.statSync(full).isDirectory()) walkExamples(full, depth + 1);
+            } catch {}
+          }
+        }
+      };
+      walkExamples(examplesDir);
+    }
+  }
+  console.log('[examples] scanned:', scannedDirs, '— found:', examples.length);
+
+  // Sort by lib name then example name
+  examples.sort((a, b) => a.lib.localeCompare(b.lib) || a.name.localeCompare(b.name));
+  return { ok: true, examples };
+});
+
+// ── IPC: Dump arduino-cli config (for debugging) ─────────────────────────────
+ipcMain.handle('cli:config-dump', async () => {
+  const res = await runCLIJson(['config', 'dump']);
+  return { ok: res.ok, config: res.data };
+});
+
+// ── IPC: Read a file ──────────────────────────────────────────────────────────
+ipcMain.handle('cli:read-file', async (_, { filePath }) => {
+  try {
+    const content = fs.readFileSync(filePath, 'utf8');
+    return { ok: true, content };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+});
+
 // ── IPC: All boards from installed cores ─────────────────────────────────────
 ipcMain.handle('cli:board-list-all', async () => {
   const res = await runCLIJson(['board', 'listall']);
@@ -293,6 +381,65 @@ ipcMain.handle('cli:compile', async (event, { fqbn, sketchDir }) => {
   return await streamCLI(['compile', '--fqbn', fqbn, '--verbose', sketchDir], event.sender);
 });
 
+// ── IPC: Delete file from disk ───────────────────────────────────────────────
+ipcMain.handle('fs:delete-file', async (event, { filePath }) => {
+  const { response } = await dialog.showMessageBox(win, {
+    type: 'warning',
+    buttons: ['Move to Trash', 'Cancel'],
+    defaultId: 1,
+    cancelId: 1,
+    title: 'Move to Trash',
+    message: `Move "${path.basename(filePath)}" to Trash?`,
+    detail: 'You can restore it from the Trash later.',
+  });
+  if (response === 1) return { ok: false, canceled: true };
+  try {
+    await shell.trashItem(filePath);
+    return { ok: true };
+  } catch (e) { return { ok: false, error: e.message }; }
+});
+
+// ── IPC: List sketch directory files ─────────────────────────────────────────
+ipcMain.handle('fs:list-dir', async (_, { sketchDir }) => {
+  try {
+    const entries = fs.readdirSync(sketchDir, { withFileTypes: true });
+    const files = entries
+      .filter(e => e.isFile() && /\.(ino|h|cpp|c)$/.test(e.name))
+      .map(e => ({ name: e.name, filePath: path.join(sketchDir, e.name) }));
+    return { ok: true, files };
+  } catch (e) { return { ok: false, files: [] }; }
+});
+
+// Silent compile for syntax checking — returns structured errors without streaming to output
+ipcMain.handle('cli:compile-check', async (_, { fqbn, sketchDir }) => {
+  return new Promise((resolve) => {
+    if (!CLI) return resolve({ ok: false, errors: [] });
+    const env = { ...process.env, PATH: `${CLI_INSTALL_DIR}:${process.env.PATH}` };
+    const proc = spawn(CLI, ['compile', '--fqbn', fqbn, sketchDir], { env });
+    let stderr = '';
+    proc.stderr.on('data', d => { stderr += d; });
+    proc.stdout.on('data', () => {}); // drain stdout silently
+    proc.on('close', code => {
+      const errors = [];
+      // GCC error format: /path/to/file.ino:LINE:COL: error/warning: message
+      const re = /([^\s:]+\.ino):(\d+):\d+:\s*(error|warning):\s*(.+)/g;
+      let m;
+      while ((m = re.exec(stderr)) !== null) {
+        const msg = m[4].trim();
+        if (msg.startsWith('In file') || msg.startsWith('note:') || msg.startsWith('In member')) continue;
+        const lineNum = parseInt(m[2], 10);
+        const kind = m[3];
+        // Only keep first error per line (errors win over warnings)
+        const existing = errors.find(e => e.line === lineNum);
+        if (!existing) errors.push({ line: lineNum, kind, msg });
+        else if (kind === 'error' && existing.kind === 'warning') existing.kind = 'error';
+      }
+      resolve({ ok: code === 0, errors });
+    });
+    proc.on('error', () => resolve({ ok: false, errors: [] }));
+  });
+});
+
 // ── IPC: Upload ───────────────────────────────────────────────────────────────
 ipcMain.handle('cli:upload', async (event, { fqbn, port, sketchDir }) => {
   event.sender.send('cli:line', { text: `arduino-cli upload -p ${port} --fqbn ${fqbn} "${sketchDir}"`, kind: 'system' });
@@ -321,7 +468,11 @@ ipcMain.handle('fs:save', async (event, { filePath, content }) => {
 
 // ── IPC: File — Save current ──────────────────────────────────────────────────
 ipcMain.handle('fs:save-current', async (_, { filePath, content }) => {
-  try { fs.writeFileSync(filePath, content, 'utf8'); return { ok: true }; }
+  try {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, content, 'utf8');
+    return { ok: true };
+  }
   catch (e) { return { ok: false, error: e.message }; }
 });
 

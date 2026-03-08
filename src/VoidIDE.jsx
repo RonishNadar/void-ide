@@ -10,6 +10,17 @@ const CSS = `
     --muted:#4a5570;--text:#c0c8d8;--text2:#7a8599;--white:#eef0f5;
     --r:6px;--mono:'JetBrains Mono',monospace;--ui:'Syne',sans-serif;
   }
+  .light {
+    --bg0:#f5f6fa;--bg1:#ffffff;--bg2:#eef0f5;--bg3:#e4e7f0;--bg4:#d0d4e0;
+    --line:#d0d4e0;--cyan:#0891b2;--cyan2:#0e7490;--green:#059669;
+    --red:#dc2626;--blue:#2563eb;--amber:#d97706;
+    --muted:#9ca3af;--text:#1e293b;--text2:#64748b;--white:#0f172a;
+  }
+  .light .code-ta { caret-color: var(--cyan); }
+  .theme-btn{background:none;border:1px solid var(--line);border-radius:20px;
+    padding:4px 10px;cursor:pointer;font-size:11px;color:var(--text2);
+    font-family:var(--ui);transition:border-color .15s,color .15s;display:flex;align-items:center;gap:5px}
+  .theme-btn:hover{border-color:var(--cyan);color:var(--text)}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--bg0);color:var(--text);font-family:var(--ui);overflow:hidden}
   ::-webkit-scrollbar{width:6px;height:6px}
@@ -114,12 +125,12 @@ const CSS = `
   .line-nums{width:52px;padding:16px 8px 16px 0;background:var(--bg0);text-align:right;
     font-family:var(--mono);font-size:13px;line-height:1.7;color:var(--bg4);
     user-select:none;flex-shrink:0;overflow:hidden}
-  .code-layer{position:relative;flex:1;overflow:hidden}
-  .code-hl{position:absolute;inset:0;padding:16px;font-family:var(--mono);font-size:13px;
-    line-height:1.7;white-space:pre;overflow:auto;pointer-events:none;color:var(--text);tab-size:2;z-index:1}
+  .code-layer{position:relative;flex:1;overflow:hidden;isolation:isolate}
+  .code-hl{position:absolute;top:0;left:0;padding:16px;font-family:var(--mono);font-size:13px;
+    line-height:22px;white-space:pre;overflow:visible;pointer-events:none;color:var(--text);tab-size:2;z-index:1;min-width:100%}
   .code-ta{position:absolute;inset:0;padding:16px;background:transparent;
     color:transparent;caret-color:var(--cyan);font-family:var(--mono);font-size:13px;
-    line-height:1.7;white-space:pre;overflow:auto;tab-size:2;resize:none;border:none;outline:none;z-index:2}
+    line-height:22px;white-space:pre;overflow:auto;tab-size:2;resize:none;border:none;outline:none;z-index:2}
   .rpanel{width:260px;flex-shrink:0;background:var(--bg1);border-left:1px solid var(--line);display:flex;flex-direction:column}
   .rp-tabs{display:flex;border-bottom:1px solid var(--line);flex-shrink:0}
   .rp-tab{flex:1;padding:9px 0;text-align:center;font-size:11px;font-weight:600;
@@ -203,12 +214,30 @@ const CSS = `
   .drop-sub{font-size:10px;color:var(--muted);margin-left:auto}
   .c-kw{color:#c678dd} .c-type{color:#61afef} .c-num{color:#d19a66}
   .c-str{color:#98c379} .c-cmt{color:#5c6370;font-style:italic} .c-pre{color:#e06c75}
+  .light .c-kw{color:#7c3aed} .light .c-type{color:#1d4ed8} .light .c-num{color:#b45309}
+  .light .c-str{color:#15803d} .light .c-cmt{color:#6b7280} .light .c-pre{color:#b91c1c}
+  /* ── Examples browser ── */
+  .ex-tree{font-family:var(--mono);font-size:12px}
+  .ex-lib{margin-bottom:4px}
+  .ex-lib-hdr{display:flex;align-items:center;gap:6px;padding:6px 8px;cursor:pointer;
+    border-radius:4px;color:var(--text2);font-weight:600;transition:background .1s}
+  .ex-lib-hdr:hover{background:var(--bg3);color:var(--text)}
+  .ex-lib-hdr.open{color:var(--cyan)}
+  .ex-arrow{font-size:9px;transition:transform .15s;display:inline-block}
+  .ex-arrow.open{transform:rotate(90deg)}
+  .ex-item{padding:5px 8px 5px 26px;cursor:pointer;border-radius:4px;
+    color:var(--text2);transition:background .1s,color .1s;display:flex;align-items:center;gap:6px}
+  .ex-item:hover{background:var(--bg3);color:var(--cyan)}
+  .new-file-row{display:flex;gap:6px;margin-bottom:8px}
+  .new-file-input{flex:1;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);
+    padding:5px 8px;font-family:var(--mono);font-size:11px;color:var(--text);outline:none}
+  .new-file-input:focus{border-color:var(--cyan)}
 
   /* ── Error / warning gutters ── */
   .gutter-wrap{position:relative}
   .err-gutter{position:absolute;right:0;top:0;width:14px}
-  .err-mark{position:absolute;right:2px;width:8px;height:8px;border-radius:50%;cursor:pointer;
-    transition:transform .1s}
+  .err-mark{position:relative;width:7px;height:7px;border-radius:50%;cursor:help;
+    display:inline-block;flex-shrink:0;transition:transform .1s}
   .err-mark:hover{transform:scale(1.4)}
   .err-mark.error{background:var(--red);box-shadow:0 0 4px var(--red)}
   .err-mark.warning{background:var(--amber);box-shadow:0 0 4px var(--amber)}
@@ -383,9 +412,26 @@ function SetupScreen({ onDone }) {
 
 // ── Main IDE ──────────────────────────────────────────────────────────────────
 export default function VoidIDE() {
-  const [ready, setReady]     = useState(null); // null=checking, false=needs setup, true=ready
-  const [tabs, setTabs]       = useState([{ id: 1, name: 'sketch.ino', code: DEFAULT_CODE, filePath: null, sketchDir: null, dirty: false }]);
+  const [ready, setReady]     = useState(null);
+  const [theme, setTheme]     = useState('dark'); // 'dark' | 'light'
+
+  // Each sketch has its own file group: { sketchId, name, sketchDir, files: [{id,name,code,filePath,dirty}], activeFile }
+  // For simplicity we keep a flat tabs array but add sketchDir + sketchId grouping
+  const [tabs, setTabs]       = useState([{ id: 1, name: 'sketch.ino', code: DEFAULT_CODE, filePath: null, sketchDir: null, dirty: false, sketchId: 1 }]);
   const [activeTab, setActive]= useState(1);
+  const [activeSketchId, setActiveSketchId] = useState(1);
+
+  // Examples browser
+  const [examples, setExamples]     = useState([]); // [{lib, name, path}]
+  const [examplesLoaded, setExamplesLoaded] = useState(false);
+  const [openLibs, setOpenLibs]     = useState({});  // {libName: true/false}
+  const [addingTo, setAddingTo]     = useState(null);   // sketchId for new file input
+  const [newFileName, setNewFileName] = useState('');
+  const [renamingId, setRenamingId]   = useState(null);  // tab id being renamed
+  const [renameVal, setRenameVal]     = useState('');
+  const [dragTab, setDragTab]         = useState(null);  // tab id being dragged
+  const [hoveredFile, setHoveredFile]   = useState(null);
+  const [dirFiles, setDirFiles]         = useState({});    // {sketchDir: [{name,filePath}]}
   const [detectedPorts, setDetectedPorts] = useState([]);
   const [board, setBoard]     = useState({ name: 'Arduino Uno', fqbn: 'arduino:avr:uno' });
   const [boardSearch, setBoardSearch] = useState('');
@@ -408,6 +454,7 @@ export default function VoidIDE() {
   const [status, setStatus]   = useState({ state: 'idle', text: 'Ready' });
   const [progress, setProgress] = useState(0);
   const [logs, setLogs]       = useState([]);
+  const [outTab, setOutTab]   = useState('summary');
   const [rpTab, setRpTab]     = useState('boards');
   const [libSearch, setLibSearch]     = useState('');
   const [libResults, setLibResults]   = useState([]);
@@ -434,6 +481,8 @@ export default function VoidIDE() {
   const compileErrors = useRef([]);
   const gutterRef     = useRef(null);
   const overlayRef    = useRef(null);
+  const preRef        = useRef(null);
+  const [scrollPos, setScrollPos] = React.useState({top:0, left:0});
 
   useEffect(() => { conEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [logs]);
   useEffect(() => { serEnd.current?.scrollIntoView({ behavior: 'smooth' }); }, [serialLogs]);
@@ -441,6 +490,23 @@ export default function VoidIDE() {
   const addLog = useCallback((text, kind = 'info') => {
     setLogs(prev => [...prev, { time: ts(), text, kind }]);
   }, []);
+
+  // Lines that matter for the Summary tab
+  const summaryLogs = React.useMemo(() => logs.filter(l => {
+    const t = l.text;
+    // Exclude: file open/save messages and raw CLI command lines
+    if (/^(Saved|Opened|Saved copy):/.test(t)) return false;
+    if (/^arduino-cli (compile|upload|lib|core|board)/i.test(t)) return false;
+    // Include: compile/upload results
+    if (l.kind === 'success' || l.kind === 'error' || l.kind === 'warning') return true;
+    if (/compilation (successful|failed)/i.test(t)) return true;
+    if (/error:|warning:/i.test(t)) return true;
+    if (/sketch uses|global variables/i.test(t)) return true;
+    if (/upload (successful|failed|complete)/i.test(t)) return true;
+    if (/avrdude: (writing|reading|verifying|done)/i.test(t)) return true;
+    return false;
+  }), [logs]);
+
 
   // ── Check CLI on mount ────────────────────────────────────────────────────
   useEffect(() => {
@@ -481,6 +547,26 @@ export default function VoidIDE() {
       setSerialOpen(false);
       setSerialLogs(prev => [...prev, { text: '--- port closed ---', type: 'sys' }]);
     });
+
+    // Load examples from installed libraries
+    const loadExamples = async () => {
+      if (!isElectron) return;
+      try {
+        const r = await window.voidIDE.libExamples();
+        if (r?.ok && r.examples?.length) {
+          setExamples(r.examples);
+          addLog(`Loaded ${r.examples.length} examples from ${[...new Set(r.examples.map(e => e.lib))].length} libraries`, 'system');
+        } else {
+          // Log config to diagnose where arduino-cli is looking
+          const cfg = await window.voidIDE.configDump();
+          addLog(`No examples found. Libraries dir: ${cfg?.config?.directories?.user || 'unknown'}`, 'warning');
+        }
+      } catch(e) {
+        addLog(`Examples load error: ${e.message}`, 'error');
+      }
+      setExamplesLoaded(true);
+    };
+    loadExamples();
 
     // Load boards from installed cores and merge with defaults
     const loadInstalledBoards = async () => {
@@ -587,8 +673,68 @@ export default function VoidIDE() {
 
   const addNewTab = () => {
     const id = Date.now();
-    setTabs(prev => [...prev, { id, name: `sketch${prev.length + 1}.ino`, code: DEFAULT_CODE, filePath: null, sketchDir: null, dirty: false }]);
+    setTabs(prev => [...prev, { id, name: `sketch${prev.length + 1}.ino`, code: DEFAULT_CODE, filePath: null, sketchDir: null, dirty: false, sketchId: id }]);
     setActive(id);
+    setActiveSketchId(id);
+  };
+
+  // Add a new file (.h or .cpp) to the current sketch
+  const addSketchFile = (filename, sketchId) => {
+    if (!filename?.trim()) return;
+    const name = filename.includes('.') ? filename.trim() : filename.trim() + '.h';
+    const sketchTab = tabs.find(t => t.sketchId === sketchId && t.name.endsWith('.ino'))
+                   || tabs.find(t => t.sketchId === sketchId)
+                   || tabs.find(t => t.id === sketchId);  // sketchId may equal tab id for opened files
+    const id = Date.now();
+    const template = name.endsWith('.h')
+      ? `#ifndef ${name.replace('.h','').toUpperCase()}_H\n#define ${name.replace('.h','').toUpperCase()}_H\n\n// Your declarations here\n\n#endif`
+      : `#include "${name.replace('.cpp','.h')}"\n\n// Your implementation here\n`;
+    setTabs(prev => [...prev, {
+      id, name, code: template,
+      filePath: sketchTab?.sketchDir ? `${sketchTab.sketchDir}/${name}` : null,
+      sketchDir: sketchTab?.sketchDir || null,
+      dirty: true, sketchId: sketchId,
+    }]);
+    setActive(id);
+    setAddingTo(null);
+    setNewFileName('');
+  };
+
+  // Refresh disk files for a sketch directory
+  const refreshDirFiles = React.useCallback(async (sketchDir) => {
+    if (!isElectron || !sketchDir) return;
+    const r = await window.voidIDE.listDir({ sketchDir });
+    if (r.ok) setDirFiles(prev => ({ ...prev, [sketchDir]: r.files }));
+  }, []);
+
+  // Open an example sketch
+  const openExample = async (example) => {
+    if (!isElectron) { addLog('Not running in Electron', 'error'); return; }
+    addLog(`Opening: ${example.path}`, 'system');
+    try {
+      const r = await window.voidIDE.readFile({ filePath: example.path });
+      if (!r?.ok) {
+        addLog(`readFile failed: ${r?.error || 'unknown error'} — path: ${example.path}`, 'error');
+        return;
+      }
+      const id = Date.now();
+      const sketchDir = example.path.substring(0, example.path.lastIndexOf('/'));
+      setTabs(prev => [...prev, {
+        id,
+        name: example.name + '.ino',
+        code: r.content,
+        filePath: example.path,
+        sketchDir,
+        dirty: false,
+        sketchId: id,
+        readOnly: true,
+      }]);
+      setActive(id);
+      setActiveSketchId(id);
+      addLog(`Opened example: ${example.lib} / ${example.name}`, 'success');
+    } catch(e) {
+      addLog(`Failed to open example: ${e.message}`, 'error');
+    }
   };
 
   const closeTab = (id, e) => {
@@ -603,15 +749,65 @@ export default function VoidIDE() {
   const handleSave = async () => {
     if (!isElectron) return;
     const tab = tabs.find(t => t.id === activeTab);
-    if (tab.filePath) {
-      const r = await window.voidIDE.saveCurrent({ filePath: tab.filePath, content: tab.code });
-      if (r.ok) { setTabs(prev => prev.map(t => t.id === activeTab ? { ...t, dirty: false } : t)); addLog(`Saved: ${tab.filePath}`, 'success'); }
-    } else {
+    // Read-only example — Save As, then become editable
+    if (tab.readOnly) {
       const r = await window.voidIDE.saveAs({ content: tab.code });
       if (r.ok && !r.canceled) {
-        setTabs(prev => prev.map(t => t.id === activeTab ? { ...t, filePath: r.filePath, sketchDir: r.sketchDir, name: r.filePath.split('/').pop(), dirty: false } : t));
-        addLog(`Saved: ${r.filePath}`, 'success');
+        setTabs(prev => prev.map(t => t.id === activeTab ? {
+          ...t, filePath: r.filePath, sketchDir: r.sketchDir,
+          name: r.filePath.split('/').pop(), dirty: false, readOnly: false,
+        } : t));
+        addLog(`Saved copy: ${r.filePath}`, 'success');
       }
+      return;
+    }
+    // .h/.cpp with no filePath — parent .ino not saved yet, save it first
+    if (!tab.filePath && !tab.name.endsWith('.ino')) {
+      // Find and save the parent .ino first to get sketchDir
+      const parentIno = tabs.find(t => t.sketchId === tab.sketchId && t.name.endsWith('.ino'));
+      let sketchDir = parentIno?.sketchDir;
+      if (!sketchDir) {
+        // Parent .ino needs saving too
+        const inoContent = parentIno?.code || '';
+        const r = await window.voidIDE.saveAs({ content: inoContent });
+        if (!r.ok || r.canceled) return;
+        sketchDir = r.sketchDir;
+        // Update parent .ino tab
+        setTabs(prev => prev.map(t => t.id === parentIno?.id ? {
+          ...t, filePath: r.filePath, sketchDir: r.sketchDir,
+          name: r.filePath.split('/').pop(), dirty: false,
+        } : t));
+      }
+      // Now save the .h/.cpp into that sketchDir
+      const filePath = `${sketchDir}/${tab.name}`;
+      const r2 = await window.voidIDE.saveCurrent({ filePath, content: tab.code });
+      if (r2.ok) {
+        setTabs(prev => prev.map(t => t.id === activeTab ? {
+          ...t, filePath, sketchDir, dirty: false,
+        } : t));
+        addLog(`Saved: ${filePath}`, 'success');
+      }
+      return;
+    }
+    // Any file with known filePath — save directly
+    if (tab.filePath) {
+      const r = await window.voidIDE.saveCurrent({ filePath: tab.filePath, content: tab.code });
+      if (r.ok) {
+        setTabs(prev => prev.map(t => t.id === activeTab ? { ...t, dirty: false } : t));
+        addLog(`Saved: ${tab.filePath}`, 'success');
+        refreshDirFiles(tab.sketchDir);
+      }
+      return;
+    }
+    // Unsaved .ino with no filePath — show Save As dialog
+    const r = await window.voidIDE.saveAs({ content: tab.code });
+    if (r.ok && !r.canceled) {
+      setTabs(prev => prev.map(t => t.id === activeTab ? {
+        ...t, filePath: r.filePath, sketchDir: r.sketchDir,
+        name: r.filePath.split('/').pop(), dirty: false,
+      } : t));
+      addLog(`Saved: ${r.filePath}`, 'success');
+      refreshDirFiles(r.sketchDir);
     }
   };
 
@@ -620,22 +816,27 @@ export default function VoidIDE() {
     const r = await window.voidIDE.openFile();
     if (!r.ok || r.canceled) return;
     const id = Date.now();
-    setTabs(prev => [...prev, { id, name: r.filePath.split('/').pop(), code: r.content, filePath: r.filePath, sketchDir: r.sketchDir, dirty: false }]);
+    setTabs(prev => [...prev, { id, name: r.filePath.split('/').pop(), code: r.content, filePath: r.filePath, sketchDir: r.sketchDir, dirty: false, sketchId: id }]);
     setActive(id);
     addLog(`Opened: ${r.filePath}`, 'success');
+    refreshDirFiles(r.sketchDir);
   };
 
   // ── Ensure sketch saved before compile/upload ─────────────────────────────
   const ensureSaved = async (tab) => {
-    if (!tab.sketchDir) {
+    if (tab.readOnly || !tab.sketchDir) {
+      addLog('Example is read-only — save a copy first (Ctrl+S)', 'warning');
       const r = await window.voidIDE.saveAs({ content: tab.code });
       if (!r.ok || r.canceled) return null;
-      setTabs(prev => prev.map(t => t.id === activeTab ? { ...t, filePath: r.filePath, sketchDir: r.sketchDir, name: r.filePath.split('/').pop(), dirty: false } : t));
+      setTabs(prev => prev.map(t => t.id === tab.id ? {
+        ...t, filePath: r.filePath, sketchDir: r.sketchDir,
+        name: r.filePath.split('/').pop(), dirty: false, readOnly: false,
+      } : t));
       return r.sketchDir;
     }
     if (tab.dirty) {
       await window.voidIDE.saveCurrent({ filePath: tab.filePath, content: tab.code });
-      setTabs(prev => prev.map(t => t.id === activeTab ? { ...t, dirty: false } : t));
+      setTabs(prev => prev.map(t => t.id === tab.id ? { ...t, dirty: false } : t));
     }
     return tab.sketchDir;
   };
@@ -648,7 +849,7 @@ export default function VoidIDE() {
       if (!m) continue;
       // arduino-cli reports the line AFTER the error (e.g. missing semicolon shows on next line)
       // subtract 1 to point at the actual offending line
-      const lineNum = Math.max(1, parseInt(m[2], 10) - 1);
+      const lineNum = parseInt(m[2], 10);
       const kind    = m[3];
       const msg     = m[4].trim();
       if (msg.startsWith('In file') || msg.startsWith('note:') || msg.startsWith('In member')) continue;
@@ -804,23 +1005,21 @@ export default function VoidIDE() {
     clearTimeout(syntaxTimer.current);
     syntaxTimer.current = setTimeout(async () => {
       const tab = tabs.find(t => t.id === activeTab);
-      if (!tab?.sketchDir) return; // only check saved sketches
-      const capturedLines = [];
-      window.voidIDE.offCLILine();
-      window.voidIDE.onCLILine(({ text }) => capturedLines.push(text));
-      // Write current code to disk silently without changing dirty state
+      if (!tab?.sketchDir || tab?.readOnly) return;
+      // Save silently, then use structured compile-check (no listener swapping)
       await window.voidIDE.saveCurrent({ filePath: tab.filePath, content: code });
-      const r = await window.voidIDE.compile({ fqbn: board.fqbn, sketchDir: tab.sketchDir });
-      window.voidIDE.offCLILine();
-      window.voidIDE.onCLILine(({ text, kind }) => addLog(text, kind));
+      const r = await window.voidIDE.compileCheck({ fqbn: board.fqbn, sketchDir: tab.sketchDir });
       if (r.ok) {
-        setErrorLines({});  // clean compile — clear all markers
+        setErrorLines({});
       } else {
-        // Deep errors override instant checks for the same lines
-        parseErrors(capturedLines);
+        // r.errors = [{line, kind, msg}] — exact line numbers direct from GCC, no offset needed
+        const errs = {};
+        for (const e of r.errors) errs[e.line] = { msg: e.msg, kind: e.kind };
+        setErrorLines(errs);
+        compileErrors.current = errs;
       }
-    }, 300);
-  }, [tabs, activeTab, board, addLog, parseErrors, instantSyntaxCheck]);
+    }, 1500);
+  }, [tabs, activeTab, board]);
 
   // ── Library search (debounced) ────────────────────────────────────────────
   const handleLibSearch = q => {
@@ -891,6 +1090,7 @@ export default function VoidIDE() {
   };
 
   const lineCount = activeCode.split('\n').length;
+  const gutterLines = lineCount; // exact line count — bottom spacer handles scroll alignment
 
   // Build highlighted code — NO background spans in the pre layer
   // Background highlights are handled via a separate overlay div to avoid cursor shift
@@ -925,7 +1125,7 @@ export default function VoidIDE() {
   return (
     <>
       <style>{FONT_LINK}{CSS}</style>
-      <div className="ide">
+      <div className={`ide ${theme === "light" ? "light" : ""}`}>
 
         {/* Title bar */}
         <div className="titlebar">
@@ -954,6 +1154,13 @@ export default function VoidIDE() {
           </div>
           <button className="btn ghost" style={{ padding: '4px 8px' }} onClick={refreshPorts} title="Refresh ports">{I.refresh}</button>
           <div className="ts" />
+          <button className="theme-btn" onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}>
+            {theme === 'dark'
+              ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+              : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            }
+            {theme === 'dark' ? 'Light' : 'Dark'}
+          </button>
           <span className="cli-badge">{cliVer || (isElectron ? 'loading…' : 'browser mode')}</span>
         </div>
 
@@ -982,18 +1189,190 @@ export default function VoidIDE() {
           {/* Sidebar */}
           <div className="sidebar">
             <div className="sb-sec">
-              <div className="sb-hdr">Open Files</div>
-              {tabs.map(t => (
-                <div key={t.id} className={`sb-item ${t.id === activeTab ? 'active' : ''}`} onClick={() => setActive(t.id)}>
-                  {I.file} {t.name}{t.dirty ? ' *' : ''}
-                  <span style={{ marginLeft: 'auto', opacity: .6, fontSize: 10 }} onClick={e => closeTab(t.id, e)}>✕</span>
-                </div>
-              ))}
+              <div className="sb-hdr" style={{display:'flex',alignItems:'center',justifyContent:'space-between',paddingRight:10}}>
+                <span>SKETCHES</span>
+                <span title="New Sketch" style={{cursor:'pointer',color:'var(--muted)',lineHeight:1,display:'flex',alignItems:'center'}}
+                  onClick={addNewTab}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </span>
+              </div>
+              {Object.entries(
+                tabs.reduce((acc, t) => {
+                  const sid = t.sketchId || t.id;
+                  if (!acc[sid]) acc[sid] = [];
+                  acc[sid].push(t);
+                  return acc;
+                }, {})
+              ).map(([sid, skFiles]) => {
+                const sidNum = parseInt(sid);
+                const inoFile = skFiles.find(f => f.name.endsWith('.ino')) || skFiles[0];
+                const folderName = inoFile.name.replace('.ino','');
+                return (
+                  <div key={sid} style={{marginBottom:2}}>
+                    {/* Folder row */}
+                    <div style={{
+                      display:'flex',alignItems:'center',gap:6,
+                      padding:'5px 8px 5px 10px',fontSize:12,fontWeight:600,
+                      color:'var(--text)',cursor:'default',userSelect:'none',
+                      background:'var(--bg1)',marginTop:2,
+                    }}
+                      onMouseEnter={e => e.currentTarget.querySelector('.folder-actions').style.opacity=1}
+                      onMouseLeave={e => e.currentTarget.querySelector('.folder-actions').style.opacity=0}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" style={{color:'var(--amber)',flexShrink:0}}><path d="M2 4h5l1.5 2H14v7H2z"/></svg>
+                      <span style={{flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{folderName}</span>
+                      <span className="folder-actions" style={{display:'flex',gap:8,opacity:0,transition:'opacity .1s',alignItems:'center'}}>
+                        <span title="New file" style={{cursor:'pointer',color:'var(--muted)',lineHeight:1,display:'flex',alignItems:'center'}}
+                          onClick={() => { setAddingTo(sidNum); setNewFileName(''); }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                        </span>
+                        <span title="New sketch" style={{cursor:'pointer',color:'var(--muted)',lineHeight:1,display:'flex',alignItems:'center'}}
+                          onClick={addNewTab}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        </span>
+                      </span>
+                    </div>
+                    {/* Files — from disk if available, else from open tabs */}
+                    {(() => {
+                      const inoTab = skFiles.find(f => f.name.endsWith('.ino')) || skFiles[0];
+                      const diskFiles = inoTab?.sketchDir ? (dirFiles[inoTab.sketchDir] || []) : [];
+                      // Merge disk files with open tabs; disk wins for file list
+                      const displayFiles = diskFiles.length > 0
+                        ? diskFiles.map(df => {
+                            const openTab = skFiles.find(t => t.name === df.name);
+                            return openTab || { id: `disk-${df.filePath}`, name: df.name, filePath: df.filePath, sketchDir: inoTab.sketchDir, sketchId: sidNum, disk: true };
+                          })
+                        : skFiles;
+                      return displayFiles.map(t => {
+                        const hKey = t.id;
+                        const isActive = t.id === activeTab;
+                        const isDirty = !t.disk && t.dirty;
+                        return (
+                          <div key={t.id}
+                            className={`sb-item ${isActive ? 'active' : ''}`}
+                            style={{paddingLeft:28,paddingRight:6,display:'flex',alignItems:'center',gap:6,position:'relative'}}
+                            onClick={() => {
+                              if (t.disk) {
+                                // Open disk file as new tab
+                                window.voidIDE.readFile({ filePath: t.filePath }).then(r => {
+                                  if (!r.ok) return;
+                                  const id = Date.now();
+                                  setTabs(prev => [...prev, { id, name: t.name, code: r.content, filePath: t.filePath, sketchDir: t.sketchDir, dirty: false, sketchId: t.sketchId }]);
+                                  setActive(id);
+                                });
+                              } else { setActive(t.id); }
+                            }}
+                            onMouseEnter={() => setHoveredFile(hKey)}
+                            onMouseLeave={() => setHoveredFile(null)}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{flexShrink:0,opacity:.6}}>
+                              <path d="M4 1h6l3 3v10H4z"/><path d="M10 1v3h3"/>
+                            </svg>
+                            {renamingId === t.id ? (
+                              <input autoFocus
+                                style={{flex:1,background:'var(--bg2)',border:'1px solid var(--cyan)',
+                                  borderRadius:2,padding:'1px 4px',fontSize:11,color:'var(--text)',
+                                  fontFamily:'var(--mono)',outline:'none'}}
+                                value={renameVal}
+                                onChange={e => setRenameVal(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') {
+                                    const newName = renameVal.trim();
+                                    if (newName && newName !== t.name) {
+                                      setTabs(prev => prev.map(x => x.id === t.id ? {
+                                        ...x, name: newName,
+                                        filePath: x.filePath ? x.filePath.replace(/[^/]+$/, newName) : null,
+                                        dirty: true,
+                                      } : x));
+                                    }
+                                    setRenamingId(null);
+                                  }
+                                  if (e.key === 'Escape') setRenamingId(null);
+                                }}
+                                onBlur={() => setRenamingId(null)}
+                              />
+                            ) : (
+                              <span style={{
+                                flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontSize:12,
+                                color: t.name.endsWith('.h') ? 'var(--blue)' :
+                                       t.name.endsWith('.cpp') || t.name.endsWith('.c') ? 'var(--amber)' : 'var(--text)',
+                                opacity: t.disk ? 0.7 : 1,
+                              }} onDoubleClick={() => { if (!t.disk) { setRenamingId(t.id); setRenameVal(t.name); } }}>
+                                {t.name}{isDirty ? <span style={{color:'var(--amber)',marginLeft:2}}>●</span> : null}
+                              </span>
+                            )}
+                            {hoveredFile === hKey && renamingId !== t.id && (
+                              <span style={{display:'flex',gap:6,marginLeft:'auto',flexShrink:0,alignItems:'center'}}>
+                                {!t.disk && (
+                                  <span title="Rename" style={{cursor:'pointer',color:'var(--muted)',lineHeight:1,display:'flex',alignItems:'center'}}
+                                    onClick={e => { e.stopPropagation(); setRenamingId(t.id); setRenameVal(t.name); }}>
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                  </span>
+                                )}
+                                {t.name.endsWith('.ino') ? (
+                                  /* .ino — close all tabs in group */
+                                  <span title="Close sketch" style={{cursor:'pointer',color:'var(--muted)',lineHeight:1,display:'flex',alignItems:'center'}}
+                                    onClick={e => { e.stopPropagation(); setTabs(prev => prev.filter(x => x.sketchId !== sidNum)); }}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                  </span>
+                                ) : (
+                                  /* .h/.cpp/.c — delete from disk */
+                                  <span title="Delete file from disk" style={{cursor:'pointer',color:'var(--red)',lineHeight:1,display:'flex',alignItems:'center'}}
+                                    onClick={async e => {
+                                      e.stopPropagation();
+                                      if (!t.filePath) return;
+                                      const r = await window.voidIDE.deleteFile({ filePath: t.filePath });
+                                      if (r.ok) {
+                                        setTabs(prev => prev.filter(x => x.id !== t.id));
+                                        setDirFiles(prev => {
+                                          const updated = { ...prev };
+                                          if (updated[t.sketchDir]) updated[t.sketchDir] = updated[t.sketchDir].filter(f => f.filePath !== t.filePath);
+                                          return updated;
+                                        });
+                                      }
+                                    }}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                                  </span>
+                                )}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      });
+                    })()}
+                    {/* Inline new file input */}
+                    {addingTo === sidNum && (
+                      <div style={{display:'flex',alignItems:'center',paddingLeft:26,paddingRight:8,gap:4}}>
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--cyan)" strokeWidth="1.5" style={{flexShrink:0}}>
+                          <path d="M4 1h6l3 3v10H4z"/><path d="M10 1v3h3"/>
+                        </svg>
+                        <input autoFocus
+                          style={{flex:1,background:'var(--bg2)',border:'1px solid var(--cyan)',
+                            borderRadius:2,padding:'2px 5px',fontSize:11,color:'var(--text)',
+                            fontFamily:'var(--mono)',outline:'none'}}
+                          placeholder="filename.h"
+                          value={newFileName}
+                          onChange={e => setNewFileName(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') addSketchFile(newFileName, sidNum);
+                            if (e.key === 'Escape') { setAddingTo(null); setNewFileName(''); }
+                          }}
+                          onBlur={() => { setAddingTo(null); setNewFileName(''); }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             <div className="sb-sec">
               <div className="sb-hdr">Manager</div>
               <div className={`sb-item ${rpTab === 'libs' ? 'active' : ''}`}    onClick={() => setRpTab('libs')}>{I.lib}   Library Manager</div>
               <div className={`sb-item ${rpTab === 'boards' ? 'active' : ''}`}  onClick={() => setRpTab('boards')}>{I.board} Board Manager</div>
+              <div className={`sb-item ${rpTab === 'examples' ? 'active' : ''}`} onClick={() => setRpTab('examples')}>
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 4h14M1 8h10M1 12h7"/></svg>
+                Examples
+              </div>
               <div className={`sb-item ${rpTab === 'info' ? 'active' : ''}`}    onClick={() => setRpTab('info')}>{I.board} System Info</div>
             </div>
             <div className="sb-sec">
@@ -1011,70 +1390,111 @@ export default function VoidIDE() {
 
           {/* Editor */}
           <div className="editor-area">
-            <div className="tabs">
-              {tabs.map(t => (
-                <div key={t.id} className={`tab ${t.id === activeTab ? 'active' : ''}`} onClick={() => setActive(t.id)}>
-                  {t.dirty && <span className="tab-dot" />}{t.name}
+            <div className="tabs" style={{flexWrap:'nowrap',overflowX:'auto',userSelect:'none'}}>
+              {tabs.map((t, idx) => (
+                <div key={t.id}
+                  className={`tab ${t.id === activeTab ? 'active' : ''}`}
+                  draggable
+                  onDragStart={() => setDragTab(t.id)}
+                  onDragOver={e => { e.preventDefault(); }}
+                  onDrop={() => {
+                    if (dragTab === null || dragTab === t.id) return;
+                    setTabs(prev => {
+                      const arr = [...prev];
+                      const from = arr.findIndex(x => x.id === dragTab);
+                      const to   = arr.findIndex(x => x.id === t.id);
+                      const [moved] = arr.splice(from, 1);
+                      arr.splice(to, 0, moved);
+                      return arr;
+                    });
+                    setDragTab(null);
+                  }}
+                  onDragEnd={() => setDragTab(null)}
+                  style={{
+                    borderBottom: t.name.endsWith('.h')   ? '2px solid var(--blue)' :
+                                  t.name.endsWith('.cpp') ? '2px solid var(--amber)' : undefined,
+                    opacity: dragTab === t.id ? 0.4 : 1,
+                    cursor: 'grab',
+                  }}
+                  onClick={() => setActive(t.id)}>
+                  {t.dirty && <span className="tab-dot" />}
+                  {t.readOnly && <span style={{color:'var(--amber)',fontSize:9,marginRight:2}}>★</span>}
+                  {t.name}
                   <span className="tab-x" onClick={e => closeTab(t.id, e)}>✕</span>
                 </div>
               ))}
-              <div className="tab-add" onClick={addNewTab}>+</div>
             </div>
+            {currentTab?.readOnly && (
+              <div style={{
+                background:'rgba(240,192,64,0.08)',borderBottom:'1px solid var(--amber)',
+                padding:'5px 16px',fontSize:11,fontFamily:'var(--mono)',
+                color:'var(--amber)',display:'flex',alignItems:'center',gap:8,flexShrink:0
+              }}>
+                <span>⚠ Read-only example</span>
+                <span style={{color:'var(--muted)'}}>—</span>
+                <span>Ctrl+S to save a copy and start editing</span>
+              </div>
+            )}
             <div className="code-wrap">
               {/* Line numbers + inline error dots — scroll together */}
               <div ref={gutterRef} style={{
                 width:68,flexShrink:0,background:'var(--bg0)',
                 overflowY:'hidden',overflowX:'hidden',
-                fontFamily:'var(--mono)',fontSize:13,lineHeight:'1.7em',
-                paddingTop:16,paddingBottom:16,boxSizing:'border-box',
+                fontFamily:'var(--mono)',fontSize:13,lineHeight:'22px',
                 userSelect:'none'
               }}>
-                {Array.from({length:lineCount},(_,i)=>i+1).map(n=>{
+                <div style={{height:16,flexShrink:0}}/>
+                {Array.from({length:gutterLines},(_,i)=>i+1).map(n=>{
                   const err = errorLines[n];
                   return (
                     <div key={n} style={{
-                      height:'1.7em',display:'flex',alignItems:'center',
-                      justifyContent:'flex-end',gap:3,paddingRight:4
+                      height:22,display:'flex',alignItems:'center',
+                      justifyContent:'flex-end',gap:4,paddingRight:8
                     }}>
                       <span style={{
                         color:err?(err.kind==='error'?'var(--red)':'var(--amber)'):'var(--bg4)',
-                        fontWeight:err?700:400,minWidth:30,textAlign:'right',fontSize:13
+                        fontWeight:err?700:400,minWidth:24,textAlign:'right',fontSize:12
                       }}>
                         {n}
                       </span>
                       {err ? (
                         <span
                           className={`err-mark ${err.kind}`}
-                          style={{flexShrink:0,display:'inline-block'}}
+                          style={{flexShrink:0,display:'inline-block',cursor:'help'}}
                           onMouseEnter={e => setTooltip({msg:err.msg,kind:err.kind,x:e.clientX,y:e.clientY})}
                           onMouseLeave={() => setTooltip(null)}
                         />
-                      ) : <span style={{width:8,display:'inline-block',flexShrink:0}}/>}
+                      ) : <span style={{width:7,flexShrink:0}}/>}
                     </div>
                   );
                 })}
+                <div style={{height:16,flexShrink:0}}/>
               </div>
               <div className="code-layer">
                 {/* Error line background overlay — behind both pre and textarea */}
-                <div ref={overlayRef} aria-hidden="true" style={{
-                  position:'absolute',inset:0,padding:'16px 0',
-                  pointerEvents:'none',zIndex:0,overflow:'hidden',fontFamily:'var(--mono)',
-                  fontSize:13,lineHeight:'1.7em'
+                <div aria-hidden="true" style={{
+                  position:'absolute',inset:0,
+                  pointerEvents:'none',zIndex:0,overflow:'hidden',
                 }}>
-                  {activeCode.split('\n').map((_, i) => {
-                    const err = errorLines[i + 1];
-                    if (!err) return <div key={i} style={{height:'1.7em'}} />;
-                    return <div key={i} style={{
-                      height:'1.7em',
-                      background: err.kind === 'error' ? 'rgba(224,90,90,0.10)' : 'rgba(240,192,64,0.07)',
-                      borderLeft: `2px solid ${err.kind === 'error' ? 'var(--red)' : 'var(--amber)'}`,
-                      width:'100%'
-                    }}/>;
-                  })}
+                  <div style={{
+                    transform:`translateY(${16 - scrollPos.top}px)`,
+                    willChange:'transform',
+                  }}>
+                    {activeCode.split('\n').map((_, i) => {
+                      const err = errorLines[i + 1];
+                      if (!err) return <div key={i} style={{height:22}} />;
+                      return <div key={i} style={{
+                        height:22,
+                        background: err.kind === 'error' ? 'rgba(224,90,90,0.10)' : 'rgba(240,192,64,0.07)',
+                        borderLeft: `2px solid ${err.kind === 'error' ? 'var(--red)' : 'var(--amber)'}`,
+                        width:'100%'
+                      }}/>;
+                    })}
+                  </div>
                 </div>
-                <pre className="code-hl" style={{zIndex:1}} dangerouslySetInnerHTML={{ __html: highlightWithErrors(activeCode) }} />
-                <textarea className="code-ta" value={activeCode} onChange={e => updateCode(e.target.value)} spellCheck={false}
-                  onScroll={e => { if (gutterRef.current) gutterRef.current.scrollTop = e.target.scrollTop; if (overlayRef.current) overlayRef.current.scrollTop = e.target.scrollTop; }}
+                <pre ref={preRef} className="code-hl" style={{zIndex:1,transform:`translate(${-scrollPos.left}px, ${-scrollPos.top}px)`,top:0,left:0,position:'absolute',width:'100%'}} dangerouslySetInnerHTML={{ __html: highlightWithErrors(activeCode) }} />
+                <textarea className="code-ta" value={activeCode} onChange={e => { if (!currentTab?.readOnly) updateCode(e.target.value); }} spellCheck={false}
+                  onScroll={e => { const t = e.target.scrollTop, l = e.target.scrollLeft; if (gutterRef.current) gutterRef.current.scrollTop = t; if (overlayRef.current) overlayRef.current.scrollTop = t; setScrollPos({top:t,left:l}); }}
                   onKeyDown={e => {
                     if (e.key === 'Tab') { e.preventDefault(); const s = e.target.selectionStart, en = e.target.selectionEnd; updateCode(activeCode.slice(0, s) + '  ' + activeCode.slice(en)); setTimeout(() => { e.target.selectionStart = e.target.selectionEnd = s + 2; }, 0); }
                     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave(); }
@@ -1084,14 +1504,28 @@ export default function VoidIDE() {
             </div>
             <div className="console">
               <div className="con-hdr">
-                <span className="con-title">Output</span>
-                <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)' }}>arduino-cli</span>
+                {/* Tabs */}
+                <div style={{display:'flex',gap:0,marginRight:8}}>
+                  {['summary','full'].map(t => (
+                    <div key={t} onClick={() => setOutTab(t)} style={{
+                      padding:'2px 12px',fontSize:10,fontWeight:700,letterSpacing:.6,
+                      textTransform:'uppercase',cursor:'pointer',borderRadius:3,
+                      color: outTab === t ? 'var(--cyan)' : 'var(--muted)',
+                      background: outTab === t ? 'var(--bg2)' : 'transparent',
+                      transition:'color .15s,background .15s',
+                    }}>{t === 'summary' ? 'Summary' : 'Full Log'}</div>
+                  ))}
+                </div>
+                <span style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--muted)'}}>arduino-cli</span>
                 <button className="con-clear" onClick={() => setLogs([])}>Clear</button>
               </div>
               <div className="con-body">
-                {logs.map((l, i) => (
+                {(outTab === 'summary' ? summaryLogs : logs).map((l, i) => (
                   <div className="lg" key={i}><span className="lgt">{l.time}</span><span className={`lgm ${l.kind}`}>{l.text}</span></div>
                 ))}
+                {outTab === 'summary' && summaryLogs.length === 0 && (
+                  <div style={{color:'var(--muted)',fontSize:11,fontStyle:'italic',marginTop:4}}>Compile or upload to see results here.</div>
+                )}
                 <div ref={conEnd} />
               </div>
             </div>
@@ -1099,10 +1533,12 @@ export default function VoidIDE() {
 
           {/* Right panel */}
           <div className="rpanel">
-            <div className="rp-tabs">
-              {['boards', 'libs', 'info'].map(t => (
-                <div key={t} className={`rp-tab ${rpTab === t ? 'active' : ''}`} onClick={() => setRpTab(t)}>
-                  {t === 'libs' ? 'Libraries' : t === 'boards' ? 'Boards' : 'Info'}
+            <div className="rp-tabs" style={{flexWrap:'wrap'}}>
+              {['boards', 'libs', 'examples', 'info'].map(t => (
+                <div key={t} className={`rp-tab ${rpTab === t ? 'active' : ''}`}
+                  style={{flex:'1 1 auto',minWidth:0,fontSize:10}}
+                  onClick={() => setRpTab(t)}>
+                  {t === 'libs' ? 'Libraries' : t === 'boards' ? 'Boards' : t === 'examples' ? 'Examples' : 'Info'}
                 </div>
               ))}
             </div>
@@ -1217,6 +1653,57 @@ export default function VoidIDE() {
                       </div>
                     );
                   })}
+                </>
+              )}
+
+              {/* ── Examples Browser ── */}
+              {rpTab === 'examples' && (
+                <>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                    <div style={{fontSize:10,color:'var(--muted)',fontFamily:'var(--mono)',flex:1}}>
+                      Click any example to open it in a new tab
+                    </div>
+                    <button className="btn ghost" style={{padding:'2px 8px',fontSize:10}}
+                      onClick={async () => {
+                        setExamplesLoaded(false);
+                        setExamples([]);
+                        const r = await window.voidIDE.libExamples();
+                        if (r?.ok && r.examples?.length) {
+                          setExamples(r.examples);
+                          addLog(`Loaded ${r.examples.length} examples`, 'system');
+                        } else {
+                          addLog('No examples found after refresh', 'warning');
+                        }
+                        setExamplesLoaded(true);
+                      }}>{I.refresh}</button>
+                  </div>
+                  {!examplesLoaded && <div className="empty">Loading examples…</div>}
+                  {examplesLoaded && examples.length === 0 && (
+                    <div className="empty">No examples found.<br/>Install libraries to see their examples.</div>
+                  )}
+                  <div className="ex-tree">
+                    {Object.entries(
+                      examples.reduce((acc, ex) => {
+                        if (!acc[ex.lib]) acc[ex.lib] = [];
+                        acc[ex.lib].push(ex);
+                        return acc;
+                      }, {})
+                    ).map(([lib, exs]) => (
+                      <div className="ex-lib" key={lib}>
+                        <div className={`ex-lib-hdr ${openLibs[lib] ? 'open' : ''}`}
+                          onClick={() => setOpenLibs(p => ({...p, [lib]: !p[lib]}))}>
+                          <span className={`ex-arrow ${openLibs[lib] ? 'open' : ''}`}>▶</span>
+                          {lib}
+                          <span style={{marginLeft:'auto',color:'var(--muted)',fontSize:10}}>{exs.length}</span>
+                        </div>
+                        {openLibs[lib] && exs.map(ex => (
+                          <div className="ex-item" key={ex.path} onClick={() => openExample(ex)}>
+                            {ex.name}
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 </>
               )}
 
