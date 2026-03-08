@@ -520,29 +520,8 @@ ipcMain.handle('serial:open', async (event, { port, baud }) => {
   const env = { ...process.env, PATH: `${CLI_INSTALL_DIR}:${process.env.PATH}` };
   serialProc = spawn(CLI, ['monitor', '-p', port, '--config', `baudrate=${baud}`], { env });
 
-  let serialBuf = '';
-  let serialFlushTimer = null;
-
-  const flushSerialBuf = () => {
-    if (serialBuf.length > 0) {
-      event.sender.send('serial:data', { line: serialBuf, partial: true });
-      serialBuf = '';
-    }
-    serialFlushTimer = null;
-  };
-
   serialProc.stdout.on('data', d => {
-    serialBuf += d.toString();
-    const lines = serialBuf.split(/\r?\n|\r/);
-    serialBuf = lines.pop(); // keep incomplete last chunk
-    lines.filter(l => l.length > 0).forEach(line =>
-      event.sender.send('serial:data', { line, partial: false })
-    );
-    // If there's a partial line with no newline, flush after 100ms
-    if (serialBuf.length > 0) {
-      clearTimeout(serialFlushTimer);
-      serialFlushTimer = setTimeout(flushSerialBuf, 100);
-    }
+    event.sender.send('serial:data', { text: d.toString() });
   });
   serialProc.stderr.on('data', d => {
     const txt = d.toString().trim();
