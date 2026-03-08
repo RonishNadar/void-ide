@@ -8,36 +8,36 @@ Codename: stable
 Architectures: amd64
 Components: main
 Description: Void IDE APT Repository
-Date: Sun, 08 Mar 2026 18:15:26 +0000
+Date: Sun, 08 Mar 2026 18:33:43 +0000
 MD5Sum:
- 3953684c97fa9c0285766c3924e242b2              177 Release
- ce31b41576ea7b010185dccdb8816a27              603 main/binary-amd64/Packages
- e8ef1bd0320b76d3afa651e959a8d1ed              446 main/binary-amd64/Packages.gz
+ 24381ea71b663cbe372f9a8d079e7a5b              177 Release
+ fdf6724320b2a5ebe366486f13ceeb91              603 main/binary-amd64/Packages
+ 7bf1536e6b656d2f4defb3649ff38850              446 main/binary-amd64/Packages.gz
 SHA1:
- 70a6ea5cbdb6ca2baa2da7d1795507347c830f32              177 Release
- ff0e08151d67f756d8a271aa057117a00f0eddf4              603 main/binary-amd64/Packages
- 5c0bf8bdc7ed5ecaebf9b41ca41500fb6c269aaa              446 main/binary-amd64/Packages.gz
+ 2d3f95cccfea5663d2b4266e1f93d73281958b93              177 Release
+ b772fde06de20841ae76ed508cc8b39e421d8d2c              603 main/binary-amd64/Packages
+ 5a5bad5635905cb767aecc504600751b83736c62              446 main/binary-amd64/Packages.gz
 SHA256:
- 1fd16a1344d77a0b4e6d8c71c2de87552495f2b44e1f865da6f5b7984278d480              177 Release
- 2eb9ec29170b650dc2441965af57d202822d888030154603807273e837d74017              603 main/binary-amd64/Packages
- e4097a3faa480509c78dcbf371b455f440c3c35802de83b00881981c6e896a27              446 main/binary-amd64/Packages.gz
+ b0b4892788266ee030d2cf39632bfe397049bd2d8672b662b7ca77d9fe12641d              177 Release
+ b1e48fa025e6d5e89c9384bc0bf8ad9beb165624efaf8c5a23961fb44eae6f96              603 main/binary-amd64/Packages
+ 9e32ae28b89db711bcb35832a60df9dae6ffa71376a47cbaf81a3e4c25156d94              446 main/binary-amd64/Packages.gz
 SHA512:
- d1e0cecb06a6d3cea747a68ebcbc2ac3e60030adc5a01b78804ccae60211be77cd09b9da0b0fe32f588ee46151042923f1a7743dfdcbdc830b6695926bd7ef63              177 Release
- a92f7be2fb6a4ae2c0910abc898ce4b1b58aa280df81dcee7e3b221dfcac6b2da6b609e1425d0a251f19df466b34f127f317b525934fdc16db12f02262259afe              603 main/binary-amd64/Packages
- 4278a2c5ba584b049347a9ccc75d1286c837b0520ecf2e3d3a0da65d8300a2514d1736b3440834e632054bf7c2b8a5fd60602af075eb5eafc833f655c3a87a66              446 main/binary-amd64/Packages.gz
+ d775301936e6e1acc17c40080ef9a394e4a6f34db38b22e24f2ecb4fa0e1cb5694bab275974d8309b839a800935a7e4fdd37e2bf845761cc546e57edc86c26b6              177 Release
+ d7c40d0785e23ef30ba2be56adae436f5292957c113be9e372c176a4d0a16e550a617a219594b5063f878d42af3522f7f577cef338ae4f214b38ee80bb7cab98              603 main/binary-amd64/Packages
+ 6e4b585c346045d5f11193a98e4d8713acb1b2d7e77dd0df2f6e9734032c7006c87fc057a1fbae298f8fd44685aa22a2930f84bdfabe56b48a7ece24a2093a2e              446 main/binary-amd64/Packages.gz
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCgAdFiEEEra5ko7TbZ6UzdpkCifZbIV17PMFAmmtvL4ACgkQCifZbIV1
-7PMMuxAAoj/ReRoLXsLUjQ8+n8r+NHgS2VDihcP5IlBpGXA+MjTtIiu1EGVfqZER
-CskTYRPn5DWXW+HL9ZQmwdtckBHHt/hT4RvKEp4L6Zv9tvxHvlZGwhd9nBRoy69f
-vdjFhDyKJ7BAlCoCjL8uAVOKc1ISrWmBt0yn74gWFBXd6Mo1L4jN2/3ZQ1AZX+aq
-Z+nMXt1o77s+KlMK+AAUO0FNv15SnfcYrMyn3pXvIbQpli4/fwJU0ihjsSOte8Ke
-Wkm4sj9PNNGlpmHYioqK73Wk3qO1LF/3RXQdP+rgmEIEiTj5Xl9k7N9zr9Fe9BXU
-jO163zKzNz+PWjOI/egQvPGkRyblyeHSgr4o9cUmv+L6sREbQkj26GMxGYv9jrIl
-9nNW7TJ0m3xQV4G3Hhsjd2cXYGFQpfs3r55oItw2Sabr7IP8N+zm5EcLTP9GPPiv
-rm0JJ2G9FToI5KoV5dRc+iKTm8MDmteroJa6bc/pIGcf+vG3rsyIpklOtMzVb3tj
-ocOxhIYIIvwNr4Al/Ov6oX/ZoALsCNLFu5nkkyAAdMvjv3ysXw3umcnt1M4hwBXv
-1ng9At3c1sOckFzaRnWio7hGlkwXxTMlRBi0Obl2tQYGV28quRztCT1/V4Z413x1
-eafaZgeVj5gMGaxxKyXj1PpGC9BBocr8FFv95aI66zUT5ckyjzg=
-=eaEB
+iQIzBAEBCgAdFiEEEra5ko7TbZ6UzdpkCifZbIV17PMFAmmtwQcACgkQCifZbIV1
+7PNbvRAAqvYjiYNS5ZiTVOZTltQZKBRTqw1G+Gy+lHccCga4smmRlP5srXkf3cOE
+KLqvuM5uytxoP26z9PDht193mAFUlmDWyHLXCHOjj4azyqghZsrvBxgXhYjBdR7u
+/562HNKv2KFG/mVemyHBk6WJy8BUOryHF3xTSte8MNlS6DUFueVVOaB2ogKaSays
+y5Ff19tCQkB3XZdcZpPUMWK6DkN8OVvc9ly913nF0ZIpFaKLi63x8/VSaGiOjn5I
+/L38eQa/Gce2kPhczDU/arPP1a28mQDIZX+fQNowhNTQbtB5DBxG5oBwcwB9kXa2
+BZR1IbhfBHEwcjMLopI0tJuAxAlYB7qLQUiZZDbz2wJwNqLnUPDVE3mSvE09a7rv
+IVMCS7TuQETsOWwO3P7gh3a61xbdA9SGyBMbQNk7mJE2QAWxtW2/CCnBqlz38hk0
+nlSuiJqBGUtB+gZp92uH7V863lXktUB8U8j+gYKxPh2S+rfN7ciZdr+Ixey3r9MS
++Ltslfa48KzUsuHjA7Kfci9vfm/xjbzPA1Nu1cmoI+W1kTGu+g+cbPO3cN/3RIyi
+V7BZzRjsDmacmWBiKvZiHTNCi6y9+SGFtLOPsOvzWvg1l34aL8WhBjbTQ7GUoFiv
+u61teMcys/QnI9RT3QeFiPvcCIYqvvdVTpAqdrmGScZNx8XJju8=
+=dprS
 -----END PGP SIGNATURE-----

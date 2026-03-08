@@ -1,15 +1,15 @@
 Package: void-ide
-Version: 1.0.3
+Version: 1.0.4
 Architecture: amd64
 Maintainer: Ronish Nadar
-Installed-Size: 399472
+Installed-Size: 399474
 Depends: libgtk-3-0, libnotify4, libnss3, libxss1, libxtst6, xdg-utils, libatspi2.0-0, libuuid1
 Recommends: libappindicator3-1
-Filename: pool/main/void-ide_1.0.3_amd64.deb
-Size: 86849918
-MD5sum: ddd87aeaf3a56bbc0c054bda0113e4a7
-SHA1: 9745c94fef04d50758ac0315becb2a8d7702b290
-SHA256: 840cc48f006dd5f3f5b60ffc81ddc2d0f692f6fe611fed4487b1a495039168a2
+Filename: pool/main/void-ide_1.0.4_amd64.deb
+Size: 86839526
+MD5sum: 0d5c4edc33c67ded3ab4517fd192ab6c
+SHA1: 8ad8309490993f6c1103f053a314ba7d896a7b7d
+SHA256: bf1ac570097ecd04310dc3b7e177cce2b882c7336b89c2344460335671e65fa2
 Section: default
 Priority: optional
 Homepage: https://./
