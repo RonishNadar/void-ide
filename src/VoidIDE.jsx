@@ -557,7 +557,21 @@ export default function VoidIDE() {
     });
 
     // Serial listeners
-    window.voidIDE.onSerialData(({ line }) => setSerialLogs(prev => [...prev, { text: line, type: 'in' }]));
+    window.voidIDE.onSerialData(({ line, partial }) => {
+      if (partial) {
+        // Append to last line if it exists, otherwise create new
+        setSerialLogs(prev => {
+          if (prev.length > 0 && prev[prev.length - 1].type === 'in') {
+            const updated = [...prev];
+            updated[updated.length - 1] = { ...updated[updated.length - 1], text: updated[updated.length - 1].text + line };
+            return updated;
+          }
+          return [...prev, { text: line, type: 'in' }];
+        });
+      } else {
+        setSerialLogs(prev => [...prev, { text: line, type: 'in' }]);
+      }
+    });
     window.voidIDE.onSerialError(({ line }) => setSerialLogs(prev => [...prev, { text: line, type: 'sys' }]));
     window.voidIDE.onSerialClosed(() => {
       setSerialOpen(false);

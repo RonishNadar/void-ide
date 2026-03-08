@@ -1,6 +1,6 @@
 {
   "name": "void-ide",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A beautiful Arduino IDE powered by Arduino CLI",
   "author": "Ronish Nadar",
   "license": "MIT",
