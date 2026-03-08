@@ -1,8 +1,6 @@
 node_modules/
 build/
 dist/
-assets/icons/
-assets/icon.png
 {electron,assets,scripts}/
 .env
 .env.local
