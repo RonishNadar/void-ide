@@ -20,11 +20,10 @@
 
 ## Features
 
-- **Zero simulation** — every action calls real `arduino-cli` under the hood
 - **Auto-installs arduino-cli** on first launch if not found
 - **Board Manager** — search and install any core from the arduino-cli index (AVR, ESP32, ESP8266, RP2040, SAMD, STM32, and more)
 - **Library Manager** — search, install, and uninstall libraries from the Arduino library registry
-- **Real Serial Monitor** — connect to any port, send and receive data, configurable baud rate
+- **Serial Monitor** — connect to any port, send and receive data, configurable baud rate
 - **Auto port detection** — detects connected boards via `arduino-cli board list`
 - **Multi-tab editor** — syntax highlighting, line numbers, Tab indent, Ctrl+S to save
 - **Native file dialogs** — open and save `.ino` sketches via OS file picker
