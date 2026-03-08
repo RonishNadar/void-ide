@@ -34,9 +34,7 @@
 
 ## Screenshots
 
-> _Launch screen on first run — installs arduino-cli automatically_
-
-> _Main IDE with Board Manager open_
+![Main IDE](screenshots/main.png)
 
 ---
 
