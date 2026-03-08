@@ -1,0 +1,94 @@
+{
+  "name": "void-ide",
+  "version": "1.0.0",
+  "description": "A beautiful Arduino IDE powered by Arduino CLI",
+  "author": "Ronish Nadar",
+  "license": "MIT",
+  "main": "electron/main.js",
+  "homepage": "./",
+  "keywords": ["arduino", "ide", "embedded", "robotics"],
+
+  "scripts": {
+    "start":          "BROWSER=none react-scripts start",
+    "build":          "react-scripts build",
+    "electron:dev":   "NODE_ENV=development electron .",
+    "electron:build": "npm run build && electron-builder",
+    "dev":            "concurrently \"npm start\" \"wait-on http://localhost:3000 && NODE_ENV=development electron . --no-sandbox\"",
+    "dist:deb":       "npm run build && electron-builder --linux deb",
+    "dist:appimage":  "npm run build && electron-builder --linux AppImage",
+    "dist:all":       "npm run build && electron-builder --linux deb AppImage"
+  },
+
+  "build": {
+    "appId":       "com.ronishnadar.void-ide",
+    "productName": "Void IDE",
+    "copyright":   "Copyright © 2025 Ronish Nadar",
+    "extends":     null,
+
+    "directories": {
+      "output": "dist"
+    },
+
+    "files": [
+      "build/**/*",
+      "electron/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+
+    "linux": {
+      "target":      ["deb", "AppImage"],
+      "icon":        "assets/icons",
+      "category":    "Development",
+      "description": "A beautiful Arduino IDE powered by Arduino CLI",
+      "maintainer":  "Ronish Nadar",
+      "desktop": {
+        "Name":       "Void IDE",
+        "Comment":    "Arduino IDE powered by Arduino CLI",
+        "Categories": "Development;Electronics;IDE;",
+        "Keywords":   "arduino;embedded;robotics;microcontroller;"
+      }
+    },
+
+    "deb": {
+      "depends": [
+        "libgtk-3-0",
+        "libnotify4",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libatspi2.0-0",
+        "libuuid1"
+      ],
+      "afterInstall": "scripts/postinstall.sh",
+      "afterRemove":  "scripts/postremove.sh"
+    }
+  },
+
+  "dependencies": {
+    "react":         "^18.2.0",
+    "react-dom":     "^18.2.0",
+    "react-scripts": "5.0.1"
+  },
+
+  "devDependencies": {
+    "concurrently":     "^8.2.2",
+    "electron":         "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "wait-on":          "^7.2.0"
+  },
+
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
