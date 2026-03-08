@@ -372,6 +372,19 @@ function SetupScreen({ onDone }) {
           </div>
         </div>
 
+        {/* Step 3 */}
+        <div className="setup-step">
+          <div className={`setup-num ${step >= 2 ? 'done' : ''}`}>
+            {step >= 2 ? '✓' : '3'}
+          </div>
+          <div className="setup-step-text">
+            <div className="setup-step-title">Install Arduino AVR core</div>
+            <div className="setup-step-desc">
+              Installs <code style={{ color: 'var(--cyan)', fontSize: 11 }}>arduino:avr</code> so Uno, Nano, Mega and other AVR boards work immediately out of the box.
+            </div>
+          </div>
+        </div>
+
         {/* Log */}
         {logs.length > 0 && (
           <div className="setup-log">
@@ -425,7 +438,13 @@ export default function VoidIDE() {
   const [examples, setExamples]     = useState([]); // [{lib, name, path}]
   const [examplesLoaded, setExamplesLoaded] = useState(false);
   const [openLibs, setOpenLibs]     = useState({});  // {libName: true/false}
-  const [addingTo, setAddingTo]     = useState(null);   // sketchId for new file input
+  const [addingTo, setAddingTo]     = useState(null);
+
+  const [acItems, setAcItems]       = useState([]);     // autocomplete suggestions
+  const [acIndex, setAcIndex]       = useState(0);      // selected suggestion
+  const [acPos, setAcPos]           = useState(null);   // {top,left} for dropdown
+  const acRef                       = useRef(null);
+  const cursorPosRef                = useRef(null); // {start, end} to restore after re-render
   const [newFileName, setNewFileName] = useState('');
   const [renamingId, setRenamingId]   = useState(null);  // tab id being renamed
   const [renameVal, setRenameVal]     = useState('');
@@ -436,16 +455,12 @@ export default function VoidIDE() {
   const [board, setBoard]     = useState({ name: 'Arduino Uno', fqbn: 'arduino:avr:uno' });
   const [boardSearch, setBoardSearch] = useState('');
   const [boardList, setBoardList] = useState([
-    { name: 'Arduino Uno',       fqbn: 'arduino:avr:uno' },
-    { name: 'Arduino Nano',      fqbn: 'arduino:avr:nano' },
-    { name: 'Arduino Mega 2560', fqbn: 'arduino:avr:mega' },
-    { name: 'Arduino Leonardo',  fqbn: 'arduino:avr:leonardo' },
-    { name: 'Arduino Micro',     fqbn: 'arduino:avr:micro' },
-    { name: 'Arduino Pro Mini',  fqbn: 'arduino:avr:pro' },
-    { name: 'ESP32 Dev Module',  fqbn: 'esp32:esp32:esp32' },
-    { name: 'ESP32-S3',          fqbn: 'esp32:esp32:esp32s3' },
-    { name: 'ESP8266 NodeMCU',   fqbn: 'esp8266:esp8266:nodemcuv2' },
-    { name: 'Raspberry Pi Pico', fqbn: 'rp2040:rp2040:rpipico' },
+    { name: 'Arduino Uno',       fqbn: 'arduino:avr:uno',      installed: true },
+    { name: 'Arduino Nano',      fqbn: 'arduino:avr:nano',     installed: true },
+    { name: 'Arduino Mega 2560', fqbn: 'arduino:avr:mega',     installed: true },
+    { name: 'Arduino Leonardo',  fqbn: 'arduino:avr:leonardo', installed: true },
+    { name: 'Arduino Micro',     fqbn: 'arduino:avr:micro',    installed: true },
+    { name: 'Arduino Pro Mini',  fqbn: 'arduino:avr:pro',      installed: true },
   ]);
   const [port, setPort]       = useState('');
   const [showBD, setShowBD]   = useState(false);
@@ -701,12 +716,81 @@ export default function VoidIDE() {
     setNewFileName('');
   };
 
+  // Arduino / C++ autocomplete keyword list
+  const AC_KEYWORDS = [
+    // Control
+    'if','else','for','while','do','switch','case','break','continue','return','default',
+    // Types
+    'void','int','float','double','bool','char','byte','unsigned','long','short','const',
+    'uint8_t','uint16_t','uint32_t','uint64_t','int8_t','int16_t','int32_t',
+    'String','boolean','word','static','volatile','extern','struct','enum','class',
+    // Arduino functions
+    'setup','loop',
+    'pinMode','digitalWrite','digitalRead','analogWrite','analogRead','analogReference',
+    'delay','delayMicroseconds','millis','micros','pulseIn','pulseInLong',
+    'shiftIn','shiftOut','tone','noTone',
+    'Serial','Serial1','Serial2','Serial3',
+    'begin','end','print','println','write','read','available','flush','peek','readString',
+    'readStringUntil','parseInt','parseFloat','setTimeout','find','findUntil',
+    'Wire','SPI','EEPROM',
+    'attachInterrupt','detachInterrupt','interrupts','noInterrupts',
+    'map','constrain','min','max','abs','pow','sqrt','sq',
+    'random','randomSeed','bitRead','bitWrite','bitSet','bitClear','bit',
+    'lowByte','highByte','wordByte',
+    // Constants
+    'HIGH','LOW','INPUT','OUTPUT','INPUT_PULLUP','INPUT_PULLDOWN',
+    'true','false','null','NULL','nullptr',
+    'LED_BUILTIN','A0','A1','A2','A3','A4','A5',
+    'PI','HALF_PI','TWO_PI','DEG_TO_RAD','RAD_TO_DEG',
+    // Preprocessor
+    '#include','#define','#ifndef','#ifdef','#endif','#pragma',
+  ];
+
   // Refresh disk files for a sketch directory
   const refreshDirFiles = React.useCallback(async (sketchDir) => {
     if (!isElectron || !sketchDir) return;
     const r = await window.voidIDE.listDir({ sketchDir });
     if (r.ok) setDirFiles(prev => ({ ...prev, [sketchDir]: r.files }));
   }, []);
+
+  // Get word being typed at cursor
+  const getWordAtCursor = (text, pos) => {
+    const before = text.slice(0, pos);
+    const match = before.match(/[a-zA-Z_#][a-zA-Z0-9_]*$/);
+    return match ? match[0] : '';
+  };
+
+  const handleAC = (textarea, code, pos) => {
+    const word = getWordAtCursor(code, pos);
+    if (word.length < 2) { setAcItems([]); return; }
+    const matches = AC_KEYWORDS.filter(k => k.startsWith(word) && k !== word);
+    setAcItems(matches.slice(0, 8));
+    setAcIndex(0);
+    if (matches.length > 0) {
+      // Position dropdown near cursor — approximate using line/col
+      const lines = code.slice(0, pos).split('\n');
+      const lineNum = lines.length - 1;
+      const col = lines[lineNum].length;
+      const lineH = 22;
+      const charW = 7.8;
+      setAcPos({ top: (lineNum + 1) * lineH + 16 - (textarea.scrollTop || 0), left: col * charW + 68 });
+    } else {
+      setAcPos(null);
+    }
+  };
+
+  const applyAC = (textarea, item) => {
+    const pos = textarea.selectionStart;
+    const word = getWordAtCursor(activeCode, pos);
+    const before = activeCode.slice(0, pos - word.length);
+    const after  = activeCode.slice(pos);
+    const newCode = before + item + after;
+    updateCode(newCode);
+    const newPos = before.length + item.length;
+    cursorPosRef.current = { start: newPos, end: newPos };
+    setAcItems([]);
+    setAcPos(null);
+  };
 
   // Open an example sketch
   const openExample = async (example) => {
@@ -1089,6 +1173,29 @@ export default function VoidIDE() {
     setSerialLogs(p => [...p, { text: `> ${serialInput}`, type: 'out' }]);
     setSerialInput('');
   };
+
+  // Restore cursor position after React re-render (for programmatic edits)
+  React.useEffect(() => {
+    if (cursorPosRef.current === null) return;
+    const ta = document.querySelector('.code-ta');
+    if (!ta) return;
+    const { start, end } = cursorPosRef.current;
+    cursorPosRef.current = null;
+    ta.selectionStart = start;
+    ta.selectionEnd   = end;
+  });
+
+  // Zoom — whole app via Electron webContents.setZoomLevel
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      if (e.key === '=' || e.key === '+') { e.preventDefault(); window.voidIDE.appZoom(1); }
+      if (e.key === '-')                  { e.preventDefault(); window.voidIDE.appZoom(-1); }
+      if (e.key === '0')                  { e.preventDefault(); window.voidIDE.appZoom(0); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   const lineCount = activeCode.split('\n').length;
   const gutterLines = lineCount; // exact line count — bottom spacer handles scroll alignment
@@ -1494,13 +1601,100 @@ export default function VoidIDE() {
                   </div>
                 </div>
                 <pre ref={preRef} className="code-hl" style={{zIndex:1,transform:`translate(${-scrollPos.left}px, ${-scrollPos.top}px)`,top:0,left:0,position:'absolute',width:'100%'}} dangerouslySetInnerHTML={{ __html: highlightWithErrors(activeCode) }} />
-                <textarea className="code-ta" value={activeCode} onChange={e => { if (!currentTab?.readOnly) updateCode(e.target.value); }} spellCheck={false}
+                <textarea className="code-ta" value={activeCode} onChange={e => { if (currentTab?.readOnly) return; updateCode(e.target.value); handleAC(e.target, e.target.value, e.target.selectionStart); }} spellCheck={false}
                   onScroll={e => { const t = e.target.scrollTop, l = e.target.scrollLeft; if (gutterRef.current) gutterRef.current.scrollTop = t; if (overlayRef.current) overlayRef.current.scrollTop = t; setScrollPos({top:t,left:l}); }}
                   onKeyDown={e => {
-                    if (e.key === 'Tab') { e.preventDefault(); const s = e.target.selectionStart, en = e.target.selectionEnd; updateCode(activeCode.slice(0, s) + '  ' + activeCode.slice(en)); setTimeout(() => { e.target.selectionStart = e.target.selectionEnd = s + 2; }, 0); }
-                    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave(); }
+                    const ta = e.target;
+                    const s = ta.selectionStart, en = ta.selectionEnd;
+                    // Save
+                    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); handleSave(); return; }
+                    // Autocomplete navigation
+                    if (acItems.length > 0) {
+                      if (e.key === 'ArrowDown') { e.preventDefault(); setAcIndex(i => (i+1)%acItems.length); return; }
+                      if (e.key === 'ArrowUp')   { e.preventDefault(); setAcIndex(i => (i-1+acItems.length)%acItems.length); return; }
+                      if (e.key === 'Tab' || e.key === 'Enter') { e.preventDefault(); applyAC(ta, acItems[acIndex]); return; }
+                      if (e.key === 'Escape')    { setAcItems([]); setAcPos(null); return; }
+                    }
+                    // Tab indent
+                    if (e.key === 'Tab') { e.preventDefault(); updateCode(activeCode.slice(0,s)+'  '+activeCode.slice(en)); cursorPosRef.current={start:s+2,end:s+2}; return; }
+                    // Auto-indent on Enter
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const lines = activeCode.slice(0, s).split('\n');
+                      const curLine = lines[lines.length - 1];
+                      const indent = curLine.match(/^\s*/)[0];
+                      const charBefore = activeCode[s - 1];
+                      const charAfter  = activeCode[en];
+                      const extraIndent = charBefore === '{' ? '  ' : '';
+                      if (charBefore === '{' && charAfter === '}') {
+                        const insert = '\n' + indent + extraIndent + '\n' + indent;
+                        updateCode(activeCode.slice(0, s) + insert + activeCode.slice(en));
+                        const pos = s + indent.length + extraIndent.length + 1;
+                        cursorPosRef.current = { start: pos, end: pos };
+                      } else {
+                        const insert = '\n' + indent + extraIndent;
+                        updateCode(activeCode.slice(0, s) + insert + activeCode.slice(en));
+                        const pos = s + insert.length;
+                        cursorPosRef.current = { start: pos, end: pos };
+                      }
+                      return;
+                    }
+                    // Auto-close brackets and quotes
+                    const pairs = {'(':')','{':'}','[':']','"':'"',"'":"'",'`':'`'};
+                    const closers = new Set(Object.values(pairs));
+                    if (pairs[e.key]) {
+                      e.preventDefault();
+                      const sel = activeCode.slice(s, en);
+                      const close = pairs[e.key];
+                      if (sel) {
+                        updateCode(activeCode.slice(0,s)+e.key+sel+close+activeCode.slice(en));
+                        cursorPosRef.current = { start: s+1, end: en+1 };
+                      } else {
+                        updateCode(activeCode.slice(0,s)+e.key+close+activeCode.slice(en));
+                        cursorPosRef.current = { start: s+1, end: s+1 };
+                      }
+                      return;
+                    }
+                    // Skip over closing bracket if already there
+                    if (closers.has(e.key) && activeCode[s] === e.key) {
+                      e.preventDefault();
+                      cursorPosRef.current = { start: s+1, end: s+1 };
+                      return;
+                    }
+                    // Backspace: delete pair
+                    if (e.key === 'Backspace' && s === en) {
+                      const open = activeCode[s-1], close = activeCode[s];
+                      if (open && pairs[open] === close) {
+                        e.preventDefault();
+                        updateCode(activeCode.slice(0,s-1)+activeCode.slice(s+1));
+                        cursorPosRef.current = { start: s-1, end: s-1 };
+                        return;
+                      }
+                    }
                   }}
                 />
+              {/* Autocomplete dropdown */}
+              {acItems.length > 0 && acPos && (
+                <div ref={acRef} style={{
+                  position:'absolute',top:acPos.top,left:acPos.left,
+                  background:'var(--bg2)',border:'1px solid var(--cyan)',borderRadius:4,
+                  zIndex:100,minWidth:160,maxWidth:300,boxShadow:'0 4px 16px rgba(0,0,0,.4)',
+                  fontFamily:'var(--mono)',fontSize:12,overflow:'hidden',
+                }}>
+                  {acItems.map((item,i) => (
+                    <div key={item}
+                      style={{padding:'4px 10px',cursor:'pointer',
+                        background: i===acIndex ? 'var(--cyan)' : 'transparent',
+                        color: i===acIndex ? '#000' : 'var(--text)',
+                      }}
+                      onMouseDown={e => { e.preventDefault(); }}
+                      onClick={() => { const ta = document.querySelector('.code-ta'); applyAC(ta, item); }}>
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               </div>
             </div>
             <div className="console">

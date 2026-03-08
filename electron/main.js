@@ -170,8 +170,14 @@ ipcMain.handle('cli:install', async (event) => {
               update.stdout.on('data', d => d.toString().split('\n').filter(Boolean).forEach(l => sender.send('cli:line', { text: l, kind: 'info' })));
               update.stderr.on('data', d => d.toString().split('\n').filter(Boolean).forEach(l => sender.send('cli:line', { text: l, kind: 'info' })));
               update.on('close', () => {
-                sender.send('cli:line', { text: '✓ arduino-cli ready to use.', kind: 'success' });
-                resolve({ ok: true, path: CLI_INSTALL_PATH });
+                sender.send('cli:line', { text: '✓ Index updated. Installing Arduino AVR core…', kind: 'info' });
+                const avr = spawn(CLI, ['core', 'install', 'arduino:avr'], { env: { ...process.env } });
+                avr.stdout.on('data', d => d.toString().split('\n').filter(Boolean).forEach(l => sender.send('cli:line', { text: l, kind: 'info' })));
+                avr.stderr.on('data', d => d.toString().split('\n').filter(Boolean).forEach(l => sender.send('cli:line', { text: l, kind: 'info' })));
+                avr.on('close', () => {
+                  sender.send('cli:line', { text: '✓ Arduino AVR core installed. Void IDE is ready.', kind: 'success' });
+                  resolve({ ok: true, path: CLI_INSTALL_PATH });
+                });
               });
             });
           } else {
@@ -514,11 +520,15 @@ ipcMain.handle('serial:open', async (event, { port, baud }) => {
   const env = { ...process.env, PATH: `${CLI_INSTALL_DIR}:${process.env.PATH}` };
   serialProc = spawn(CLI, ['monitor', '-p', port, '--config', `baudrate=${baud}`], { env });
 
-  serialProc.stdout.on('data', d =>
-    d.toString().split('\n').filter(Boolean).forEach(line =>
+  let serialBuf = '';
+  serialProc.stdout.on('data', d => {
+    serialBuf += d.toString();
+    const lines = serialBuf.split(/\r?\n|\r/);
+    serialBuf = lines.pop(); // keep incomplete line in buffer
+    lines.filter(l => l.length > 0).forEach(line =>
       event.sender.send('serial:data', { line })
-    )
-  );
+    );
+  });
   serialProc.stderr.on('data', d => {
     const txt = d.toString().trim();
     if (txt) event.sender.send('serial:error', { line: txt });
@@ -536,13 +546,22 @@ ipcMain.handle('serial:open', async (event, { port, baud }) => {
 
 ipcMain.handle('serial:write', (_, { data }) => {
   if (!serialProc?.stdin) return { ok: false };
-  serialProc.stdin.write(data + '\n');
+  serialProc.stdin.write(data);
   return { ok: true };
 });
 
 ipcMain.handle('serial:close', () => {
   if (serialProc) { serialProc.kill(); serialProc = null; }
   return { ok: true };
+});
+
+// ── IPC: App zoom ─────────────────────────────────────────────────────────────
+let zoomLevel = 0; // 0 = 100%, each step is ~20%
+ipcMain.handle('app:zoom', (_, { delta }) => {
+  if (delta === 0) { zoomLevel = 0; }
+  else { zoomLevel = Math.max(-3, Math.min(5, zoomLevel + delta)); }
+  win.webContents.setZoomLevel(zoomLevel);
+  return { zoomLevel };
 });
 
 app.on('before-quit', () => { if (serialProc) serialProc.kill(); });

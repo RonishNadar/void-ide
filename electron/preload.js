@@ -33,6 +33,10 @@ contextBridge.exposeInMainWorld('voidIDE', {
   openFile:      ()     => ipcRenderer.invoke('fs:open'),
 
   // ── serial ─────────────────────────────────────────────────────────────────
+  // ── app ────────────────────────────────────────────────────────────────────
+  appZoom:       (delta) => ipcRenderer.invoke('app:zoom', { delta }),
+
+  // ── serial ─────────────────────────────────────────────────────────────────
   serialList:    ()     => ipcRenderer.invoke('serial:list'),
   serialOpen:    (opts) => ipcRenderer.invoke('serial:open',  opts),
   serialWrite:   (data) => ipcRenderer.invoke('serial:write', { data }),
