@@ -88,11 +88,6 @@ jobs:
       - name: Import GPG key
         run: |
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes \
-            --passphrase-fd 0 \
-            --pinentry-mode loopback \
-            --trust-model always \
-            --export-secret-keys > /dev/null
 
       # ── 10. Checkout gh-pages branch (or create it) ──────────────────────────
       - name: Checkout gh-pages
@@ -142,15 +137,11 @@ jobs:
           apt-ftparchive release . >> Release
 
           # Sign Release with GPG
-          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes \
-            --passphrase-fd 0 \
-            --pinentry-mode loopback \
+          gpg --batch --yes --pinentry-mode loopback \
             --default-key "${{ secrets.GPG_KEY_ID }}" \
             --clearsign -o InRelease Release
 
-          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes \
-            --passphrase-fd 0 \
-            --pinentry-mode loopback \
+          gpg --batch --yes --pinentry-mode loopback \
             --default-key "${{ secrets.GPG_KEY_ID }}" \
             -abs -o Release.gpg Release
 
