@@ -7,3 +7,5 @@ dist/
 *.log
 npm-debug.log*
 .DS_Store
+void-ide.gpg
+scripts/void-ide.gpg

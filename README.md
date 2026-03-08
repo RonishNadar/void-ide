@@ -18,14 +18,33 @@
 
 ---
 
+## Install via APT
+
+```bash
+curl -fsSL https://ronishnadar.github.io/void-ide/void-ide.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/void-ide.gpg
+echo "deb [signed-by=/etc/apt/keyrings/void-ide.gpg] https://ronishnadar.github.io/void-ide/apt stable main" | sudo tee /etc/apt/sources.list.d/void-ide.list
+sudo apt update && sudo apt install void-ide
+```
+
+> **Log out and back in** after first install for serial port access to take effect.
+
+---
+
 ## Features
 
 - **Auto-installs arduino-cli** on first launch if not found
-- **Board Manager** — search and install any core from the arduino-cli index (AVR, ESP32, ESP8266, RP2040, SAMD, STM32, and more)
-- **Library Manager** — search, install, and uninstall libraries from the Arduino library registry
+- **VSCode-style file explorer** — project folders with all `.ino`, `.h`, `.cpp`, `.c` files visible, inline rename, move to trash
+- **Multi-file sketch support** — add `.h` and `.cpp` files to any sketch, grouped by project
+- **Draggable tabs** — reorder open files by dragging
+- **Board Manager** — search and install any core (AVR, ESP32, ESP8266, RP2040, SAMD, STM32, and more)
+- **Library Manager** — search, install, and uninstall libraries from the Arduino registry
+- **Examples browser** — browse examples from installed libraries
 - **Serial Monitor** — connect to any port, send and receive data, configurable baud rate
-- **Auto port detection** — detects connected boards via `arduino-cli board list`
-- **Multi-tab editor** — syntax highlighting, line numbers, Tab indent, Ctrl+S to save
+- **Auto port and board detection** — detects connected boards and auto-selects port and FQBN
+- **Syntax highlighting** — real-time client-side check + deep arduino-cli compile check
+- **Error markers** — gutter dots with hover tooltips, line highlighting
+- **Split output panel** — Summary tab (errors, warnings, memory usage) and Full Log tab (raw CLI output)
+- **Light / dark theme** toggle
 - **Native file dialogs** — open and save `.ino` sketches via OS file picker
 - **Packages as `.deb`** — installs to Show Applications like a native Linux app
 
@@ -46,12 +65,12 @@
 
 ---
 
-## Getting Started
+## Build from Source
 
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/void-ide.git
+git clone https://github.com/RonishNadar/void-ide.git
 cd void-ide
 ```
 
@@ -64,7 +83,7 @@ npm install
 ### 3. Generate icons
 
 ```bash
-pip3 install Pillow --break-system-packages
+pip3 install Pillow
 python3 scripts/generate_icon.py
 ```
 
@@ -90,10 +109,7 @@ This starts the React dev server and opens the Electron window. On first launch,
 ## Build & Install as a native `.deb`
 
 ```bash
-# Build the .deb package
 npm run dist:deb
-
-# Install it
 sudo dpkg -i dist/void-ide_1.0.0_amd64.deb
 ```
 
@@ -102,8 +118,6 @@ After installation, **Void IDE** appears in Show Applications with its icon. The
 - Sets up udev rules for Arduino USB devices (CH340, CP210x, ATmega16U2)
 - Creates `~/VoidSketches/` as your default sketch folder
 - Patches the `.desktop` entry with `--no-sandbox` for correct launch on Linux
-
-> **Log out and back in** after first install for serial port access to take effect.
 
 ### Uninstall
 
@@ -118,14 +132,12 @@ sudo dpkg --purge void-ide
 If your board is not detected after installing:
 
 ```bash
-# Add yourself to the dialout group (if not done by installer)
 sudo usermod -aG dialout $USER
-
 # Log out and back in, then verify
 arduino-cli board list
 ```
 
-For **Arduino Nano clones** (CH340 chip), also run:
+For **Arduino Nano clones** (CH340 chip):
 
 ```bash
 sudo apt install linux-modules-extra-$(uname -r)
@@ -139,23 +151,39 @@ Then unplug and replug your board.
 
 ```
 void-ide/
+├── .github/
+│   └── workflows/
+│       └── release.yml     ← Builds .deb and publishes APT repo on version tag
 ├── electron/
-│   ├── main.js         ← Electron main process, arduino-cli IPC bridge, serial monitor
-│   └── preload.js      ← Secure contextBridge — exposes window.voidIDE to React
+│   ├── main.js             ← Electron main process, arduino-cli IPC bridge, serial monitor
+│   └── preload.js          ← Secure contextBridge — exposes window.voidIDE to React
 ├── src/
-│   ├── VoidIDE.jsx     ← Entire IDE UI (editor, board manager, library manager, serial)
-│   └── index.js        ← React entry point
+│   ├── VoidIDE.jsx         ← Entire IDE UI
+│   └── index.js            ← React entry point
 ├── public/
-│   └── index.html      ← HTML shell
+│   └── index.html
 ├── assets/
-│   ├── icon.png        ← 512x512 app icon
-│   └── icons/          ← Multi-size icons for electron-builder (16–512px)
+│   ├── icon.png            ← 512x512 app icon
+│   └── icons/              ← Multi-size icons for electron-builder (16–512px)
 ├── scripts/
-│   ├── generate_icon.py   ← Generates all icon sizes using Pillow
-│   ├── postinstall.sh     ← Runs after dpkg install
-│   └── postremove.sh      ← Runs after dpkg removal
+│   ├── generate_icon.py    ← Generates all icon sizes using Pillow
+│   ├── setup-gpg.sh        ← One-time GPG key setup for APT repo signing
+│   ├── postinstall.sh      ← Runs after dpkg install
+│   └── postremove.sh       ← Runs after dpkg removal
 └── package.json
 ```
+
+---
+
+## Releasing a New Version
+
+```bash
+# Bump version in package.json, then:
+git tag v1.1.0
+git push origin v1.1.0
+```
+
+GitHub Actions will automatically build the `.deb`, create a GitHub Release, and update the APT repository.
 
 ---
 
